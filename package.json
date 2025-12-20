@@ -1,11 +1,10 @@
 {
   "name": "web",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "scripts": {
     "build": "npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend",
-    "srart": "npm run start --prefix backend"
+    "start": "npm run start --prefix backend"
   },
   "repository": {
     "type": "git",
@@ -18,5 +17,6 @@
   "bugs": {
     "url": "https://github.com/amiqua/HarmonyHub/issues"
   },
-  "homepage": "https://github.com/amiqua/HarmonyHub#readme"
+  "homepage": "https://github.com/amiqua/HarmonyHub#readme",
+  "description": ""
 }
