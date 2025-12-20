@@ -9,10 +9,8 @@ import app from "./app.js";
 import { env } from "./config/env.js";
 import { logger } from "./config/logger.js";
 import { db } from "./config/db.js";
-import path from "path";
 
 const server = http.createServer(app);
-const __dirname = path.resolve();
 
 async function bootstrap() {
   // Kiểm tra DB connection sớm để fail-fast
