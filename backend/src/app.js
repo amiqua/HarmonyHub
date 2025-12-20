@@ -33,14 +33,19 @@ app.use(compression());
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// CORS
-app.use(
-  cors({
-    origin: env.CORS_ORIGIN,
-    credentials: true,
-  })
-);
+if (process.env.NODE_ENV !== "production") {
+  app.get("*", (req, res) => {
+    app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
+    res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+  }); // CORS
+  app.use(
+    cors({
+      origin: env.CORS_ORIGIN,
+      credentials: true,
+    })
+  );
+}
 // Rate limit (giảm spam)
 app.use(
   rateLimit({
