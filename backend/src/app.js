@@ -9,6 +9,8 @@ import cors from "cors";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
 import pinoHttp from "pino-http";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import { env } from "./config/env.js";
 import { logger } from "./config/logger.js";
@@ -33,19 +35,14 @@ app.use(compression());
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-if (process.env.NODE_ENV !== "production") {
-  app.get("*", (req, res) => {
-    app.use(express.static(path.join(__dirname, "../frontend/dist")));
+// CORS (nên để ngoài if để prod cũng dùng được)
+app.use(
+  cors({
+    origin: env.CORS_ORIGIN,
+    credentials: true,
+  })
+);
 
-    res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
-  }); // CORS
-  app.use(
-    cors({
-      origin: env.CORS_ORIGIN,
-      credentials: true,
-    })
-  );
-}
 // Rate limit (giảm spam)
 app.use(
   rateLimit({
@@ -56,10 +53,30 @@ app.use(
   })
 );
 
-// Routes
+// Routes API
 app.use(routes);
 
-// 404 + Error handler
+/**
+ * Serve frontend build (Vite) ở production:
+ * - Trả file tĩnh trong frontend/dist
+ * - Với mọi route KHÔNG phải /api thì trả index.html (để React Router xử lý)
+ */
+if (process.env.NODE_ENV === "production") {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+
+  // backend/src/app.js -> ../../frontend/dist (repo root/frontend/dist)
+  const distPath = path.resolve(__dirname, "../../frontend/dist");
+
+  app.use(express.static(distPath));
+
+  // Fallback cho SPA routes (không đụng vào /api)
+  app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path.join(distPath, "index.html"));
+  });
+}
+
+// 404 + Error handler (để sau cùng)
 app.use(notFound);
 app.use(errorHandler);
 
