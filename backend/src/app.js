@@ -38,8 +38,7 @@ app.use(express.urlencoded({ extended: true }));
 // CORS (nên để ngoài if để prod cũng dùng được)
 app.use(
   cors({
-    origin: env.CORS_ORIGIN,
-    credentials: true,
+    origin: "*",
   })
 );
 
