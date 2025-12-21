@@ -52,14 +52,24 @@ router.get(
  * Tạo playlist của user
  * POST /api/v1/playlists
  */
-router.post("/", auth(), validate({ body: createPlaylistSchema }), playlistsController.create);
+router.post(
+  "/",
+  auth(),
+  validate({ body: createPlaylistSchema }),
+  playlistsController.create
+);
 
 /**
  * Xem chi tiết playlist (kèm bài hát)
  * GET /api/v1/playlists/:id
  * - Nếu playlist là user playlist -> yêu cầu đăng nhập và phải là chủ sở hữu
  */
-router.get("/:id", auth({ optional: true }), validate({ params: playlistIdParamSchema }), playlistsController.getById);
+router.get(
+  "/:id",
+  auth({ optional: true }),
+  validate({ params: playlistIdParamSchema }),
+  playlistsController.getById
+);
 
 /**
  * Đổi tên playlist (chỉ owner)

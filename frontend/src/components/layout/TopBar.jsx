@@ -1,38 +1,64 @@
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Search, Settings, Crown, Moon, Sun } from "lucide-react";
+import {
+  Search,
+  Settings,
+  Crown,
+  Moon,
+  Sun,
+  User2,
+  LogOut,
+} from "lucide-react";
 
 import useTheme from "@/hooks/useTheme";
 import { http } from "@/lib/http";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 /**
  * TopBar
- * - Thanh top gồm: Search + action buttons + login
+ * - Thanh top gồm: Search + action buttons + login/register hoặc user dropdown
  * - Search call API: GET /songs (params: q, page, limit)
  * - Toggle Light/Dark mode bằng hook useTheme
  *
- * Props (optional):
- * - onLoginClick(): void
- * - onUpgradeClick(): void
- * - onDownloadClick(): void
- * - onSettingsClick(): void
- * - onSelectSong(song): void
+ * Props:
+ * - user?: { username?: string, email?: string, avatar_url?: string }
+ * - onLoginClick?(): void
+ * - onRegisterClick?(): void
+ * - onLogoutClick?(): void
+ * - onUpgradeClick?(): void
+ * - onDownloadClick?(): void
+ * - onSettingsClick?(): void
+ * - onProfileClick?(): void
+ * - onSelectSong?(song): void
  */
 export default function TopBar({
+  user,
   onLoginClick,
+  onRegisterClick,
+  onLogoutClick,
   onUpgradeClick,
   onDownloadClick,
   onSettingsClick,
+  onProfileClick,
   onSelectSong,
 }) {
   const [q, setQ] = useState("");
@@ -55,6 +81,21 @@ export default function TopBar({
 
     return { title, artists: artists || "" };
   };
+
+  const handleClickSafe = useCallback((fn, okMsg, failMsg, logTag) => {
+    try {
+      if (typeof fn !== "function") {
+        toast.error(failMsg);
+        console.error(`[TopBar] ${logTag}: Missing handler`);
+        return;
+      }
+      fn();
+      if (okMsg) toast.success(okMsg);
+    } catch (err) {
+      console.error(`[TopBar] ${logTag} failed:`, err);
+      toast.error(failMsg);
+    }
+  }, []);
 
   const submitSearch = useCallback(async () => {
     if (!hasQuery) {
@@ -94,6 +135,7 @@ export default function TopBar({
       const { title } = normalizeSongLabel(song);
 
       try {
+        onSelects;
         onSelectSong?.(song);
         toast.success(`Đã chọn: ${title}`);
       } catch (err) {
@@ -105,21 +147,6 @@ export default function TopBar({
     },
     [onSelectSong]
   );
-
-  const handleClickSafe = useCallback((fn, okMsg, failMsg, logTag) => {
-    try {
-      if (typeof fn !== "function") {
-        toast.error(failMsg);
-        console.error(`[TopBar] ${logTag}: Missing handler`);
-        return;
-      }
-      fn();
-      toast.success(okMsg);
-    } catch (err) {
-      console.error(`[TopBar] ${logTag} failed:`, err);
-      toast.error(failMsg);
-    }
-  }, []);
 
   const handleToggleTheme = useCallback(() => {
     try {
@@ -134,6 +161,23 @@ export default function TopBar({
     }
   }, [theme, toggleTheme]);
 
+  const handleLogout = useCallback(() => {
+    try {
+      // tuỳ bạn lưu token kiểu gì, đây là ví dụ phổ biến:
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+
+      onLogoutClick?.();
+      toast.success("Đã đăng xuất.");
+    } catch (err) {
+      console.error("[TopBar] Logout failed:", err);
+      toast.error("Đăng xuất thất bại.");
+    }
+  }, [onLogoutClick]);
+
+  const displayName = user?.username || user?.email || "User";
+  const fallbackChar = (displayName?.[0] || "U").toUpperCase();
+
   return (
     <div className="flex items-center gap-3">
       {/* Search */}
@@ -147,6 +191,7 @@ export default function TopBar({
             }}
           >
             <Search className="pointer-events-none absolute left-3 size-4 opacity-70" />
+
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
@@ -178,6 +223,7 @@ export default function TopBar({
               {loading ? "Đang tìm..." : `${results.length} mục`}
             </div>
           </div>
+
           <Separator className="my-2" />
 
           {results.length === 0 ? (
@@ -190,7 +236,7 @@ export default function TopBar({
             <ScrollArea className="h-[260px] pr-2">
               <div className="space-y-1">
                 {results.map((song) => {
-                  const key = song?.id ?? `${song?.title}-${Math.random()}`;
+                  const key = song?.id ?? song?.audio_public_id ?? song?.title;
                   const { title, artists } = normalizeSongLabel(song);
 
                   return (
@@ -236,7 +282,6 @@ export default function TopBar({
           Tải bản Windows
         </Button>
 
-        {/* Theme toggle */}
         <Button
           variant="ghost"
           size="icon"
@@ -285,20 +330,105 @@ export default function TopBar({
           Nâng cấp tài khoản
         </Button>
 
-        <Button
-          variant="secondary"
-          className="rounded-full"
-          onClick={() =>
-            handleClickSafe(
-              onLoginClick,
-              "Đi tới đăng nhập.",
-              "Chưa cấu hình đăng nhập.",
-              "LoginClick"
-            )
-          }
-        >
-          Đăng nhập
-        </Button>
+        {/* AUTH AREA */}
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-10 rounded-full px-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.avatar_url || ""} alt={displayName} />
+                  <AvatarFallback>{fallbackChar}</AvatarFallback>
+                </Avatar>
+                <span className="ml-2 hidden max-w-[140px] truncate sm:inline">
+                  {displayName}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="space-y-0.5">
+                <div className="truncate">{user?.username || "Tài khoản"}</div>
+                {user?.email ? (
+                  <div className="truncate text-xs font-normal opacity-70">
+                    {user.email}
+                  </div>
+                ) : null}
+              </DropdownMenuLabel>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                onClick={() =>
+                  handleClickSafe(
+                    onProfileClick,
+                    "",
+                    "Chưa cấu hình trang hồ sơ.",
+                    "ProfileClick"
+                  )
+                }
+              >
+                <User2 className="mr-2 size-4" />
+                Hồ sơ
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={() =>
+                  handleClickSafe(
+                    onSettingsClick,
+                    "",
+                    "Chưa cấu hình cài đặt.",
+                    "SettingsClick"
+                  )
+                }
+              >
+                <Settings className="mr-2 size-4" />
+                Cài đặt
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="text-red-500 focus:text-red-500"
+              >
+                <LogOut className="mr-2 size-4" />
+                Đăng xuất
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <>
+            <Button
+              variant="secondary"
+              className="rounded-full"
+              onClick={() =>
+                handleClickSafe(
+                  onRegisterClick,
+                  "Đi tới đăng ký.",
+                  "Chưa cấu hình đăng ký.",
+                  "RegisterClick"
+                )
+              }
+            >
+              Đăng ký
+            </Button>
+
+            <Button
+              variant="secondary"
+              className="rounded-full"
+              onClick={() =>
+                handleClickSafe(
+                  onLoginClick,
+                  "Đi tới đăng nhập.",
+                  "Chưa cấu hình đăng nhập.",
+                  "LoginClick"
+                )
+              }
+            >
+              Đăng nhập
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

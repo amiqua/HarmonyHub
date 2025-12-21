@@ -27,21 +27,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-/**
- * Sidebar
- * - Hiển thị: Brand + Nav menu + Playlist list + Premium CTA
- * - Không gọi API (data truyền vào từ ngoài để tránh "đoán" structure backend)
- *
- * Props (optional):
- * - brand: { name: string, logoUrl?: string }
- * - navItems: Array<{ key: string, label: string, icon?: ReactNode, live?: boolean, group?: "main"|"more" }>
- * - playlists: Array<{ id: string|number, name: string }>
- * - activeNavKey: string
- * - activePlaylistId: string|number
- * - onNavigate(key): void
- * - onSelectPlaylist(id): void
- * - onUpgradeClick(): void
- */
 export default function Sidebar({
   brand,
   navItems,
@@ -101,12 +86,7 @@ export default function Sidebar({
         icon: <Heart className="size-4" />,
         group: "main",
       },
-      {
-        key: "playlists",
-        label: "Playlist",
-        icon: <ListMusic className="size-4" />,
-        group: "main",
-      },
+
       {
         key: "uploads",
         label: "Đã tải lên",

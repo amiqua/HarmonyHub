@@ -145,20 +145,6 @@ export default function HomeHeroCarousel({
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <Button
-              className="rounded-full"
-              onClick={() =>
-                safeAction(
-                  onLoginClick,
-                  "Đi tới đăng nhập.",
-                  "Chưa cấu hình hành động đăng nhập.",
-                  "LoginClick"
-                )
-              }
-            >
-              {current?.ctaText ?? "Đăng nhập"}
-            </Button>
-
-            <Button
               variant="secondary"
               className="rounded-full"
               onClick={() => {

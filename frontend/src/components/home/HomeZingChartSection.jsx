@@ -147,13 +147,12 @@ export default function HomeZingChartSection({
     );
   };
 
-  const handleMore = () =>
-    safeAction(
-      onMoreClick,
-      "Đi tới trang #zingchart.",
-      "Chưa cấu hình hành động Xem thêm.",
-      "MoreClick"
-    );
+  const handleMore = () => {
+    if (typeof onMoreClick === "function") return onMoreClick();
+    // fallback: tự điều hướng (nếu bạn muốn)
+    // navigate("/zingchart");
+    toast.error("Chưa cấu hình hành động Xem thêm.");
+  };
 
   return (
     <Card className="overflow-hidden rounded-3xl border-border">

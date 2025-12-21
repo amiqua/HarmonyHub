@@ -14,3 +14,8 @@ export async function refreshAccessToken(refreshToken) {
   const res = await http.post("/auth/refresh", { refreshToken });
   return res.data.data; // { accessToken }
 }
+
+export async function register({ email, password, username }) {
+  const res = await http.post("/auth/register", { email, password, username });
+  return res.data.data; // thường trả { user, tokens? } hoặc { user }
+}

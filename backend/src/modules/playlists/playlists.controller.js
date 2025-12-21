@@ -16,6 +16,12 @@ export async function listMine(req, res) {
   return ok(res, result.data, result.meta);
 }
 
+/** ✅ NEW: tạo playlist của tôi theo POST /playlists/me */
+export async function createMine(req, res) {
+  const result = await playlistsService.createMine(req.user, req.body);
+  return created(res, result);
+}
+
 export async function create(req, res) {
   const result = await playlistsService.create(req.user, req.body);
   return created(res, result);
@@ -27,15 +33,40 @@ export async function getById(req, res) {
   return ok(res, result);
 }
 
+/** ✅ NEW: xem chi tiết playlist của tôi theo GET /playlists/me/:id */
+export async function getMineById(req, res) {
+  const playlistId = Number(req.params.id);
+  const result = await playlistsService.getMineById(req.user, playlistId);
+  return ok(res, result);
+}
+
 export async function update(req, res) {
   const playlistId = Number(req.params.id);
   const result = await playlistsService.update(req.user, playlistId, req.body);
   return ok(res, result);
 }
 
+/** ✅ NEW: đổi tên playlist của tôi theo PATCH /playlists/me/:id */
+export async function updateMine(req, res) {
+  const playlistId = Number(req.params.id);
+  const result = await playlistsService.updateMine(
+    req.user,
+    playlistId,
+    req.body
+  );
+  return ok(res, result);
+}
+
 export async function remove(req, res) {
   const playlistId = Number(req.params.id);
   const result = await playlistsService.remove(req.user, playlistId);
+  return ok(res, result);
+}
+
+/** ✅ NEW: xoá playlist của tôi theo DELETE /playlists/me/:id */
+export async function removeMine(req, res) {
+  const playlistId = Number(req.params.id);
+  const result = await playlistsService.removeMine(req.user, playlistId);
   return ok(res, result);
 }
 
@@ -48,7 +79,11 @@ export async function addSong(req, res) {
 export async function removeSong(req, res) {
   const playlistId = Number(req.params.id);
   const songId = Number(req.params.songId);
-  const result = await playlistsService.removeSong(req.user, playlistId, songId);
+  const result = await playlistsService.removeSong(
+    req.user,
+    playlistId,
+    songId
+  );
   return ok(res, result);
 }
 

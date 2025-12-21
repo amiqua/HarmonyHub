@@ -43,8 +43,12 @@ export async function listMine(userId, { limit, offset }) {
 export async function create({ userId, songId, duration_listened }) {
   const res = await db.query(
     `
-    INSERT INTO play_history (user_id, song_id, duration_listened)
-    VALUES ($1, $2, $3)
+    INSERT INTO play_history (user_id, song_id, duration_listened, played_at)
+    VALUES ($1, $2, $3, NOW())
+    ON CONFLICT (user_id, song_id)
+    DO UPDATE SET
+      played_at = NOW(),
+      duration_listened = COALESCE(EXCLUDED.duration_listened, play_history.duration_listened)
     RETURNING id, user_id, song_id, played_at, duration_listened;
     `,
     [userId, songId, duration_listened ?? null]

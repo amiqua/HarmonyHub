@@ -1,16 +1,18 @@
 import { http } from "@/lib/http";
 
-// Lấy lịch sử (dùng cho trang History)
+// Lấy lịch sử nghe của tôi (phân trang)
 export async function getMyHistory(params = {}) {
-  const res = await http.get("/me/history", { params });
-  return res.data?.data; // theo chuẩn { success, data, meta }
+  const res = await http.get("/history/me", { params }); // ✅ đúng
+  return res.data?.data; // data là mảng
 }
 
-// Ghi lịch sử khi play 1 bài
-export async function addSongToHistory(songId) {
-  const res = await http.post("/me/history", {
-    type: "songs",
-    songId,
-  });
+// Ghi nhận 1 lượt nghe
+export async function addSongToHistory(songId, duration_listened) {
+  const payload = { songId };
+  if (typeof duration_listened === "number") {
+    payload.duration_listened = duration_listened;
+  }
+
+  const res = await http.post("/history", payload); // ✅ đúng
   return res.data?.data;
 }

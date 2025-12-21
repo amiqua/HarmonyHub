@@ -4,7 +4,7 @@ import HomeSuggestedPlaylists from "@/components/home/HomeSuggestedPlaylists";
 import HomeSuggestedSongsTable from "@/components/home/HomeSuggestedSongsTable";
 import HomeNewReleasesGrid from "@/components/home/HomeNewReleasesGrid";
 
-export default function HomePage({ onLogin, onPlaySong }) {
+export default function HomePage({ onLogin, onPlaySong, onGoZingChart }) {
   return (
     <div className="space-y-6">
       <HomeHeroCarousel onLoginClick={onLogin} />
@@ -12,7 +12,7 @@ export default function HomePage({ onLogin, onPlaySong }) {
       <HomeZingChartSection
         onPlayAll={() => console.log("[HomePage] Play all zingchart")}
         onPlaySong={(song) => onPlaySong?.(song)}
-        onMoreClick={() => console.log("[HomePage] Go zingchart page")}
+        onMoreClick={() => onGoZingChart?.()}
       />
 
       {/* Suggested playlists: gọi API backend (public) */}
