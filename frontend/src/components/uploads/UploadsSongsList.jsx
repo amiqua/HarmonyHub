@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
 import { toast } from "sonner";
+
+import { http } from "@/lib/http";
 
 import { cn } from "@/lib/utils";
 
@@ -45,16 +46,10 @@ import {
  * - Danh sách bài hát đã tải lên của user hiện tại (lọc theo user_id)
  *
  * API sử dụng:
- * - GET /api/v1/users/me (Auth) để lấy user.id:contentReference[oaicite:3]{index=3}
+ * - GET /api/v1/auth/me (Auth) để lấy user.id:contentReference[oaicite:3]{index=3}
  * - GET /api/v1/songs (Public) để lấy list bài hát (có user_id):contentReference[oaicite:4]{index=4}
  * - DELETE /api/v1/songs/:id (Auth + owner) để xoá bài:contentReference[oaicite:5]{index=5}
  *
- * Yêu cầu ENV:
- * - VITE_API_BASE_URL (ví dụ: http://localhost:3000/api/v1)
- *
- * Token:
- * - Mặc định component đọc localStorage key: "accessToken" hoặc "token"
- * - Bạn có thể truyền thẳng accessToken qua props để chắc chắn đúng theo Auth UI của bạn.
  */
 export default function UploadsSongsList({
   accessToken,
@@ -66,13 +61,6 @@ export default function UploadsSongsList({
   onDeleted,
   onRequireLogin, // optional: gọi khi user chưa đăng nhập mà muốn thao tác
 }) {
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-  const api = useMemo(() => {
-    return axios.create({
-      baseURL: API_BASE_URL,
-    });
-  }, [API_BASE_URL]);
 
   const token = useMemo(() => {
     return (
@@ -118,9 +106,7 @@ export default function UploadsSongsList({
     if (!token) return null;
     setLoadingMe(true);
     try {
-      const res = await api.get("/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await http.get("/auth/me", token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
       // Doc trả về: { success: true, data: { user: {...} } }
       const user = res?.data?.data?.user;
       setMe(user || null);
@@ -140,7 +126,7 @@ export default function UploadsSongsList({
   async function fetchSongs({ pageToLoad = 1, append = false } = {}) {
     setLoadingSongs(true);
     try {
-      const res = await api.get("/songs", {
+      const res = await http.get("/songs", {
         params: {
           page: pageToLoad,
           limit: pageSize,
@@ -177,13 +163,8 @@ export default function UploadsSongsList({
   useEffect(() => {
     // Load lần đầu
     (async () => {
-      if (!API_BASE_URL) {
-        console.error("[UploadsSongsList] Missing VITE_API_BASE_URL in .env");
-        toast.error("Thiếu cấu hình VITE_API_BASE_URL trong .env");
-        return;
-      }
 
-      // Không bắt buộc login để gọi /songs, nhưng muốn lọc "uploads của tôi" thì phải có /users/me
+      // Không bắt buộc login để gọi /songs, nhưng muốn lọc "uploads của tôi" thì phải có /auth/me
       if (hasLogin) {
         await fetchMe();
       } else {
@@ -193,7 +174,7 @@ export default function UploadsSongsList({
       setPage(1);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [API_BASE_URL]);
+  }, [hasLogin]);
 
   useEffect(() => {
     // Khi search/sort đổi -> load lại page 1
@@ -266,7 +247,7 @@ export default function UploadsSongsList({
     setDeleting(true);
     try {
       // DELETE /songs/:id (Auth + owner):contentReference[oaicite:6]{index=6}
-      await api.delete(`/songs/${songToDelete.id}`, {
+      await http.delete(`/songs/${songToDelete.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -416,6 +397,14 @@ export default function UploadsSongsList({
                       .filter(Boolean)
                       .join(", ") || `Song #${song.id}`;
 
+                  const coverUrl =
+                    song?.cover_url ??
+                    song?.image_url ??
+                    song?.thumbnail ??
+                    song?.thumbnail_url ??
+                    song?.coverUrl ??
+                    "";
+
                   return (
                     <div
                       key={song.id}
@@ -432,13 +421,21 @@ export default function UploadsSongsList({
                         onClick={() => handleSelect(song)}
                       >
                         <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted">
-                          {/* Không có cover_url trong API list -> dùng placeholder */}
-                          <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-muted-foreground">
-                            {String(song?.title || "?")
-                              .trim()
-                              .slice(0, 1)
-                              .toUpperCase()}
-                          </div>
+                          {coverUrl ? (
+                            <img
+                              src={coverUrl}
+                              alt={song?.title || "cover"}
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-muted-foreground">
+                              {String(song?.title || "?")
+                                .trim()
+                                .slice(0, 1)
+                                .toUpperCase()}
+                            </div>
+                          )}
                         </div>
 
                         <div className="min-w-0">

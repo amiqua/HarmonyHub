@@ -105,6 +105,8 @@ export async function list({
       s.duration,
       s.audio_url,
       s.audio_public_id,
+      s.cover_url,
+      s.cover_public_id,
       s.release_date,
       s.user_id
     FROM songs s
@@ -127,6 +129,8 @@ export async function getById(id) {
       duration,
       audio_url,
       audio_public_id,
+      cover_url,
+      cover_public_id,
       release_date,
       user_id
     FROM songs
@@ -145,13 +149,15 @@ export async function create({
   duration,
   audio_url,
   audio_public_id,
+  cover_url,
+  cover_public_id,
   release_date,
 }) {
   const res = await db.query(
     `
-    INSERT INTO songs (user_id, title, duration, audio_url, audio_public_id, release_date)
-    VALUES ($1, $2, $3, $4, $5, $6)
-    RETURNING id, user_id, title, duration, audio_url, audio_public_id, release_date;
+    INSERT INTO songs (user_id, title, duration, audio_url, audio_public_id, cover_url, cover_public_id, release_date)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    RETURNING id, user_id, title, duration, audio_url, audio_public_id, cover_url, cover_public_id, release_date;
     `,
     [
       user_id,
@@ -159,6 +165,8 @@ export async function create({
       duration ?? null,
       audio_url ?? null,
       audio_public_id ?? null,
+      cover_url ?? null,
+      cover_public_id ?? null,
       release_date ? new Date(release_date) : null,
     ]
   );
@@ -168,7 +176,15 @@ export async function create({
 
 export async function update(
   id,
-  { title, duration, audio_url, audio_public_id, release_date }
+  {
+    title,
+    duration,
+    audio_url,
+    audio_public_id,
+    cover_url,
+    cover_public_id,
+    release_date,
+  }
 ) {
   const res = await db.query(
     `
@@ -178,15 +194,19 @@ export async function update(
       duration = COALESCE($2, duration),
       audio_url = COALESCE($3, audio_url),
       audio_public_id = COALESCE($4, audio_public_id),
-      release_date = COALESCE($5, release_date)
-    WHERE id = $6
-    RETURNING id, user_id, title, duration, audio_url, audio_public_id, release_date;
+      cover_url = COALESCE($5, cover_url),
+      cover_public_id = COALESCE($6, cover_public_id),
+      release_date = COALESCE($7, release_date)
+    WHERE id = $8
+    RETURNING id, user_id, title, duration, audio_url, audio_public_id, cover_url, cover_public_id, release_date;
     `,
     [
       title ?? null,
       duration ?? null,
       audio_url ?? null,
       audio_public_id ?? null,
+      cover_url ?? null,
+      cover_public_id ?? null,
       // để giống style hiện tại của bạn: null/Date tùy trường hợp
       release_date === undefined
         ? null

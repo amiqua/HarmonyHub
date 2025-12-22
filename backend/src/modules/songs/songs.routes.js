@@ -13,7 +13,7 @@ import { Router } from "express";
 
 import { auth } from "../../middlewares/auth.js";
 import { validate } from "../../middlewares/validate.js";
-import { uploadAudioSingle } from "../../middlewares/uploadAudio.js";
+import { uploadSongMediaFields } from "../../middlewares/uploadSongMedia.js";
 
 import * as songsController from "./songs.controller.js";
 import {
@@ -34,8 +34,8 @@ const router = Router();
  * Chỉ chạy multer khi request là multipart/form-data
  * để không phá các request JSON cũ.
  */
-function optionalAudioUpload(req, res, next) {
-  if (req.is("multipart/form-data")) return uploadAudioSingle(req, res, next);
+function optionalSongMediaUpload(req, res, next) {
+  if (req.is("multipart/form-data")) return uploadSongMediaFields(req, res, next);
   return next();
 }
 
@@ -68,7 +68,7 @@ router.get(
 router.post(
   "/",
   auth(),
-  optionalAudioUpload,
+  optionalSongMediaUpload,
   validate({ body: createSongSchema }),
   songsController.create
 );
@@ -81,7 +81,7 @@ router.post(
 router.patch(
   "/:id",
   auth(),
-  optionalAudioUpload,
+  optionalSongMediaUpload,
   validate({ params: songIdParamSchema, body: updateSongSchema }),
   songsController.update
 );

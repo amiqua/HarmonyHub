@@ -38,7 +38,7 @@ export default function UploadsPageContent({ onRequireLogin }) {
 
   return (
     <div className="space-y-6">
-      <UploadSongCard onUploaded={handleUploaded} />
+      <UploadSongCard onUploaded={handleUploaded} onRequireLogin={onRequireLogin} />
 
       <UploadsSongsList
         key={refreshKey}

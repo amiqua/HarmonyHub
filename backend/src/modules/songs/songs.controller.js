@@ -5,7 +5,8 @@
  *
  * Nâng cấp:
  * - Truyền userPayload (req.user) xuống service cho các thao tác protected.
- * - Truyền req.file (nếu upload multipart) xuống service để lấy audio_url + audio_public_id.
+ * - Truyền req.files (nếu upload multipart) xuống service để lấy audio_url + audio_public_id
+ *   và cover_url + cover_public_id.
  */
 
 import { created, ok } from "../../utils/response.js";
@@ -23,19 +24,28 @@ export async function getById(req, res) {
 
 export async function create(req, res) {
   // req.user: từ auth()
-  // req.file: từ uploadAudioSingle (nếu multipart/form-data)
-  const result = await songsService.create(req.user, req.body, req.file);
+  // req.files: từ uploadSongMediaFields (nếu multipart/form-data)
+  const files = req.files || {};
+  const audioFile = Array.isArray(files.audio) ? files.audio[0] : undefined;
+  const imageFile = Array.isArray(files.image) ? files.image[0] : undefined;
+
+  const result = await songsService.create(req.user, req.body, {
+    audioFile,
+    imageFile,
+  });
   return created(res, result);
 }
 
 export async function update(req, res) {
   const songId = Number(req.params.id);
-  const result = await songsService.update(
-    req.user,
-    songId,
-    req.body,
-    req.file
-  );
+  const files = req.files || {};
+  const audioFile = Array.isArray(files.audio) ? files.audio[0] : undefined;
+  const imageFile = Array.isArray(files.image) ? files.image[0] : undefined;
+
+  const result = await songsService.update(req.user, songId, req.body, {
+    audioFile,
+    imageFile,
+  });
   return ok(res, result);
 }
 

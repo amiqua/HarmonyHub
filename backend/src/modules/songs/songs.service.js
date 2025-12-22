@@ -5,7 +5,8 @@
  * - Chỉ chủ sở hữu (songs.user_id) mới được update/delete và sửa liên kết
  *
  * Nâng cấp:
- * - create/update nhận thêm `file` (từ multer Cloudinary) để tự lấy audio_url + audio_public_id.
+ * - create/update nhận thêm `files` (từ multer Cloudinary) để tự lấy audio_url + audio_public_id
+ *   và cover_url + cover_public_id.
  * - remove cố gắng xoá file trên Cloudinary (best-effort), rồi xoá DB.
  */
 
@@ -47,6 +48,18 @@ function pickAudioFromFile(file) {
   return {
     ...(audio_url ? { audio_url } : {}),
     ...(audio_public_id ? { audio_public_id } : {}),
+  };
+}
+
+function pickCoverFromFile(file) {
+  if (!file) return {};
+
+  const cover_url = file?.path || file?.secure_url;
+  const cover_public_id = file?.filename || file?.public_id;
+
+  return {
+    ...(cover_url ? { cover_url } : {}),
+    ...(cover_public_id ? { cover_public_id } : {}),
   };
 }
 
@@ -97,18 +110,21 @@ export async function getById(id) {
  * - Ưu tiên lấy audio_url + audio_public_id từ file upload
  * - Nếu không upload file, có thể nhận audio_url/audio_public_id từ body (tuỳ bạn)
  */
-export async function create(userPayload, body, file) {
+export async function create(userPayload, body, files) {
   const userId = requireUser(userPayload);
 
-  const fromFile = pickAudioFromFile(file);
+  const fromAudio = pickAudioFromFile(files?.audioFile);
+  const fromCover = pickCoverFromFile(files?.imageFile);
 
   const data = {
     user_id: userId,
     title: body.title,
     duration: normalizeNumber(body.duration, "duration"),
     release_date: body.release_date,
-    audio_url: fromFile.audio_url ?? body.audio_url,
-    audio_public_id: fromFile.audio_public_id ?? body.audio_public_id,
+    audio_url: fromAudio.audio_url ?? body.audio_url,
+    audio_public_id: fromAudio.audio_public_id ?? body.audio_public_id,
+    cover_url: fromCover.cover_url ?? body.cover_url,
+    cover_public_id: fromCover.cover_public_id ?? body.cover_public_id,
   };
 
   const created = await songsRepo.create(data);
@@ -120,13 +136,14 @@ export async function create(userPayload, body, file) {
  * - Nếu có upload file mới: cập nhật audio_url + audio_public_id
  * - (Tuỳ chọn) xoá file cũ trên Cloudinary (best-effort)
  */
-export async function update(userPayload, songId, body, file) {
+export async function update(userPayload, songId, body, files) {
   const { song: current } = await requireOwner(userPayload, songId);
 
-  const fromFile = pickAudioFromFile(file);
+  const fromAudio = pickAudioFromFile(files?.audioFile);
+  const fromCover = pickCoverFromFile(files?.imageFile);
 
   // Nếu upload file mới và bài cũ có public_id -> thử xoá file cũ để tránh rác
-  if (fromFile.audio_public_id && current.audio_public_id) {
+  if (fromAudio.audio_public_id && current.audio_public_id) {
     try {
       ensureCloudinaryConfigured();
       await cloudinary.uploader.destroy(current.audio_public_id, {
@@ -143,14 +160,34 @@ export async function update(userPayload, songId, body, file) {
     }
   }
 
+  // Nếu upload cover mới và bài cũ có cover_public_id -> xoá cover cũ (best-effort)
+  if (fromCover.cover_public_id && current.cover_public_id) {
+    try {
+      ensureCloudinaryConfigured();
+      await cloudinary.uploader.destroy(current.cover_public_id, {
+        resource_type: "image",
+      });
+    } catch (err) {
+      logger.warn(
+        {
+          err: { message: err?.message },
+          cover_public_id: current.cover_public_id,
+        },
+        "Delete old Cloudinary cover failed (ignored)"
+      );
+    }
+  }
+
   const data = {
     title: body.title,
     duration:
       body.duration === undefined
         ? undefined
         : normalizeNumber(body.duration, "duration"),
-    audio_url: fromFile.audio_url ?? body.audio_url,
-    audio_public_id: fromFile.audio_public_id ?? body.audio_public_id,
+    audio_url: fromAudio.audio_url ?? body.audio_url,
+    audio_public_id: fromAudio.audio_public_id ?? body.audio_public_id,
+    cover_url: fromCover.cover_url ?? body.cover_url,
+    cover_public_id: fromCover.cover_public_id ?? body.cover_public_id,
     release_date: body.release_date,
   };
 
@@ -179,6 +216,23 @@ export async function remove(userPayload, songId) {
           audio_public_id: current.audio_public_id,
         },
         "Delete Cloudinary audio failed (ignored)"
+      );
+    }
+  }
+
+  if (current.cover_public_id) {
+    try {
+      ensureCloudinaryConfigured();
+      await cloudinary.uploader.destroy(current.cover_public_id, {
+        resource_type: "image",
+      });
+    } catch (err) {
+      logger.warn(
+        {
+          err: { message: err?.message },
+          cover_public_id: current.cover_public_id,
+        },
+        "Delete Cloudinary cover failed (ignored)"
       );
     }
   }

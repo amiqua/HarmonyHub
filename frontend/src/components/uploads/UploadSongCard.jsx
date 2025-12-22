@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { UploadCloud, FileAudio, X, Loader2 } from "lucide-react";
+import { UploadCloud, FileAudio, FileImage, X, Loader2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 
-import { http } from "@/lib/http";
+import { uploadSong } from "@/services/uploads.api";
 
 import {
   Card,
@@ -20,7 +20,7 @@ import { Progress } from "@/components/ui/progress";
 /**
  * UploadSongCard
  * API: POST /api/v1/songs (multipart/form-data)
- * fields: audio(file) + title(string) + release_date?(YYYY-MM-DD)
+ * fields: audio(file) + title(string) + image?(file) + release_date?(YYYY-MM-DD)
  *
  * Props:
  * - onUploaded?: (newSong) => void
@@ -28,12 +28,15 @@ import { Progress } from "@/components/ui/progress";
  */
 export default function UploadSongCard({ onUploaded, onRequireLogin }) {
   const inputRef = useRef(null);
+  const imageInputRef = useRef(null);
   const abortRef = useRef(null);
 
   const [dragging, setDragging] = useState(false);
   const [progress, setProgress] = useState(0);
 
   const [file, setFile] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
   const [title, setTitle] = useState("");
   const [releaseDate, setReleaseDate] = useState(""); // YYYY-MM-DD
 
@@ -43,8 +46,26 @@ export default function UploadSongCard({ onUploaded, onRequireLogin }) {
     return { name: file.name, sizeMB, type: file.type || "unknown" };
   }, [file]);
 
+  const imageMeta = useMemo(() => {
+    if (!imageFile) return null;
+    const sizeMB = (imageFile.size / (1024 * 1024)).toFixed(2);
+    return { name: imageFile.name, sizeMB, type: imageFile.type || "unknown" };
+  }, [imageFile]);
+
+  useEffect(() => {
+    if (!imageFile) {
+      setImagePreview("");
+      return;
+    }
+    const url = URL.createObjectURL(imageFile);
+    setImagePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [imageFile]);
+
   const resetForm = () => {
     setFile(null);
+    setImageFile(null);
+    setImagePreview("");
     setTitle("");
     setReleaseDate("");
     setProgress(0);
@@ -55,6 +76,11 @@ export default function UploadSongCard({ onUploaded, onRequireLogin }) {
   const pickFile = () => {
     if (mutation.isPending) return;
     inputRef.current?.click();
+  };
+
+  const pickImage = () => {
+    if (mutation.isPending) return;
+    imageInputRef.current?.click();
   };
 
   const validateAndSetFile = async (picked) => {
@@ -75,6 +101,22 @@ export default function UploadSongCard({ onUploaded, onRequireLogin }) {
       const nameNoExt = picked.name.replace(/\.[^/.]+$/, "");
       setTitle(nameNoExt);
     }
+  };
+
+  const validateAndSetImage = async (picked) => {
+    if (!picked) return;
+
+    if (!picked.type?.startsWith("image/")) {
+      toast.error("File không phải hình ảnh. Vui lòng chọn PNG/JPG/WebP...");
+      console.error(
+        "[UploadSongCard] Invalid image type:",
+        picked.type,
+        picked
+      );
+      return;
+    }
+
+    setImageFile(picked);
   };
 
   // ---- Drag & Drop handlers ----
@@ -118,34 +160,25 @@ export default function UploadSongCard({ onUploaded, onRequireLogin }) {
         throw new Error("Missing accessToken");
       }
 
-      const form = new FormData();
-      form.append("audio", file); // required
-      form.append("title", title.trim()); // required
-
-      // ✅ FIX: Không gửi duration (backend có thể validate number strict)
-      // Optional: release_date đúng YYYY-MM-DD
-      if (releaseDate) form.append("release_date", releaseDate);
-
-      // Debug payload (rất hữu ích)
-      for (const [k, v] of form.entries()) {
-        console.log("[Upload payload]", k, v);
-      }
-
       const controller = new AbortController();
       abortRef.current = controller;
       setProgress(0);
 
-      const res = await http.post("/songs", form, {
+      const newSong = await uploadSong({
+        audioFile: file,
+        imageFile,
+        title: title.trim(),
+        // ✅ FIX: Không gửi duration (backend có thể validate number strict)
+        release_date: releaseDate || undefined,
         signal: controller.signal,
-        headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (evt) => {
-          if (!evt.total) return;
+          if (!evt?.total) return;
           const pct = Math.round((evt.loaded * 100) / evt.total);
           setProgress(pct);
         },
       });
 
-      return res.data?.data;
+      return newSong;
     },
     onSuccess: (newSong) => {
       toast.success("Upload bài hát thành công!");
@@ -311,6 +344,70 @@ export default function UploadSongCard({ onUploaded, onRequireLogin }) {
               onChange={(e) => setReleaseDate(e.target.value)}
               disabled={mutation.isPending}
             />
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="song-image">Ảnh minh hoạ (image)</Label>
+
+            <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={pickImage}
+                  disabled={mutation.isPending}
+                >
+                  <FileImage className="mr-2 h-4 w-4" />
+                  Chọn ảnh
+                </Button>
+
+                <input
+                  ref={imageInputRef}
+                  id="song-image"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const picked = e.target.files?.[0];
+                    await validateAndSetImage(picked);
+                    e.target.value = "";
+                  }}
+                  disabled={mutation.isPending}
+                />
+
+                <div className="text-xs text-muted-foreground">
+                  {imageMeta
+                    ? `${imageMeta.name} • ${imageMeta.sizeMB} MB`
+                    : "(không bắt buộc)"}
+                </div>
+              </div>
+
+              {!mutation.isPending && imageFile && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setImageFile(null)}
+                >
+                  Bỏ ảnh
+                </Button>
+              )}
+            </div>
+
+            {imagePreview && (
+              <div className="flex items-start gap-3">
+                <div className="h-28 w-28 overflow-hidden rounded-lg border border-border/60 bg-muted">
+                  <img
+                    src={imagePreview}
+                    alt="song cover preview"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Ảnh này sẽ được hiển thị làm hình minh hoạ cho bài hát (cover).
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

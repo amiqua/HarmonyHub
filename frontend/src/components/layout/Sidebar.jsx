@@ -73,19 +73,6 @@ export default function Sidebar({
         icon: <Library className="size-4" />,
         group: "main",
       },
-      {
-        // ✅ FIX: phải trùng với App.jsx navMap key "history"
-        key: "history",
-        label: "Nghe gần đây",
-        icon: <Clock className="size-4" />,
-        group: "main",
-      },
-      {
-        key: "favorites",
-        label: "Bài hát yêu thích",
-        icon: <Heart className="size-4" />,
-        group: "main",
-      },
 
       {
         key: "uploads",

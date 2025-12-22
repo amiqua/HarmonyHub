@@ -12,6 +12,22 @@
 
 import { z } from "zod";
 
+// Hỗ trợ multipart/form-data: các field số thường vào dưới dạng string.
+const positiveIntFromAny = z.preprocess((v) => {
+  if (v === undefined || v === null || v === "") return undefined;
+  if (typeof v === "number") return v;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : v;
+}, z.number().int().positive());
+
+const positiveIntNullableFromAny = z.preprocess((v) => {
+  if (v === undefined || v === "") return undefined;
+  if (v === null) return null;
+  if (typeof v === "number") return v;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : v;
+}, z.number().int().positive().nullable());
+
 const id = z.preprocess((v) => Number(v), z.number().int().positive());
 
 export const songIdParamSchema = z.object({
@@ -42,12 +58,16 @@ export const createSongSchema = z.object({
   title: z.string().min(1, "title không được để trống").max(150),
 
   // duration có thể để frontend tự tính (từ audio metadata) hoặc backend tự tính sau này
-  duration: z.number().int().positive().optional(),
+  duration: positiveIntFromAny.optional(),
 
   // Nếu API create nhận multipart có file audio => backend tự upload và set 2 trường này
   // Nhưng vẫn cho phép gửi trực tiếp (trong trường hợp test hoặc import data)
   audio_url: z.string().url("audio_url phải là URL hợp lệ").optional(),
   audio_public_id: z.string().min(1).max(255).optional(),
+
+  // Ảnh minh hoạ (cover)
+  cover_url: z.string().url("cover_url phải là URL hợp lệ").optional(),
+  cover_public_id: z.string().min(1).max(255).optional(),
 
   release_date: z.string().optional(), // YYYY-MM-DD
 });
@@ -55,11 +75,14 @@ export const createSongSchema = z.object({
 export const updateSongSchema = z.object({
   title: z.string().min(1).max(150).optional(),
 
-  duration: z.number().int().positive().nullable().optional(),
+  duration: positiveIntNullableFromAny.optional(),
 
   // Cho phép null để “gỡ link” (tuỳ bạn có cho phép hay không)
   audio_url: z.string().url().nullable().optional(),
   audio_public_id: z.string().min(1).max(255).nullable().optional(),
+
+  cover_url: z.string().url().nullable().optional(),
+  cover_public_id: z.string().min(1).max(255).nullable().optional(),
 
   release_date: z.string().nullable().optional(),
 });
