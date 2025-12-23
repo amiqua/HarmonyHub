@@ -1,3 +1,4 @@
+// FILE: src/App.jsx
 import { useEffect, useMemo, useState } from "react";
 import {
   Route,
@@ -15,6 +16,7 @@ import TopBar from "@/components/layout/TopBar";
 import Sidebar from "@/components/layout/Sidebar";
 import LoginDialog from "@/components/auth/LoginDialog";
 import RegisterDialog from "@/components/auth/RegisterDialog";
+import AddToPlaylistDialog from "@/components/playlist/AddToPlaylistDialog";
 
 import GlobalAudioPlayer from "@/components/player/GlobalAudioPlayer";
 
@@ -289,7 +291,7 @@ function AppInner() {
           element={<Navigate to="/library?tab=liked" replace />}
         />
 
-        {/* ✅ NEW: gợi ý 1 — /playlists chuyển về tab playlists trong Library */}
+        {/* ✅ NEW: /playlists chuyển về tab playlists trong Library */}
         <Route
           path="/playlists/*"
           element={<Navigate to="/library?tab=playlists" replace />}
@@ -336,6 +338,9 @@ function AppInner() {
           qc.invalidateQueries({ queryKey: ["history", "me"] });
         }}
       />
+
+      {/* ✅ Render dialog global ở đây (đúng chỗ) */}
+      <AddToPlaylistDialog onRequireLogin={() => setLoginOpen(true)} />
 
       <GlobalAudioPlayer song={nowPlaying} />
     </AppShell>

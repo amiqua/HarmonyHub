@@ -3,6 +3,7 @@
 // - Có header (thumb + title + meta)
 // - Align end + side bottom, z-index cao
 // - Có callback để bạn nối logic sau
+// ✅ Update: "Thêm vào playlist" mặc định sẽ mở AddToPlaylistDialog thông qua event "playlist:addSong"
 
 import { useMemo } from "react";
 import { toast } from "sonner";
@@ -25,7 +26,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -104,6 +104,21 @@ export default function SongMoreMenu({
       console.error("[SongMoreMenu] copy failed:", e);
       toast.error("Không thể sao chép.");
     }
+  };
+
+  // ✅ NEW: default hành vi thêm vào playlist
+  const handleAddToPlaylist = () => {
+    if (!song) return;
+
+    // Nếu component cha có truyền callback thì dùng callback (giữ tương thích)
+    if (typeof onAddToPlaylist === "function") {
+      return safeCall(onAddToPlaylist);
+    }
+
+    // Mặc định: bắn event để AddToPlaylistDialog bắt và mở
+    window.dispatchEvent(
+      new CustomEvent("playlist:addSong", { detail: { song } })
+    );
   };
 
   return (
@@ -211,10 +226,8 @@ export default function SongMoreMenu({
           Phát nội dung tương tự
         </DropdownMenuItem>
 
-        <DropdownMenuItem
-          className="rounded-xl"
-          onClick={() => safeCall(onAddToPlaylist, "Thêm vào playlist (demo).")}
-        >
+        {/* ✅ SỬA Ở ĐÂY */}
+        <DropdownMenuItem className="rounded-xl" onClick={handleAddToPlaylist}>
           <Plus className="mr-2 h-4 w-4" />
           Thêm vào playlist
         </DropdownMenuItem>

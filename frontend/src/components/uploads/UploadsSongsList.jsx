@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { http } from "@/lib/http";
-
 import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
@@ -39,6 +38,8 @@ import {
   Mic,
   Trash2,
   RefreshCcw,
+  Link2,
+  Play,
 } from "lucide-react";
 
 /**
@@ -46,11 +47,118 @@ import {
  * - Danh sách bài hát đã tải lên của user hiện tại (lọc theo user_id)
  *
  * API sử dụng:
- * - GET /api/v1/auth/me (Auth) để lấy user.id:contentReference[oaicite:3]{index=3}
- * - GET /api/v1/songs (Public) để lấy list bài hát (có user_id):contentReference[oaicite:4]{index=4}
- * - DELETE /api/v1/songs/:id (Auth + owner) để xoá bài:contentReference[oaicite:5]{index=5}
+ * - GET /api/v1/auth/me (Auth) để lấy user.id
+ * - GET /api/v1/songs (Public) để lấy list bài hát (có user_id)
+ * - DELETE /api/v1/songs/:id (Auth + owner) để xoá bài
  *
  */
+
+function UploadSongMoreMenu({ song, onPlay, onCopy, onDelete }) {
+  const title = song?.title || "Untitled";
+  const subtitle =
+    song?.artists
+      ?.map?.((a) => a?.name)
+      .filter(Boolean)
+      .join(", ") || `Song #${song?.id ?? "?"}`;
+
+  const coverUrl =
+    song?.cover_url ??
+    song?.image_url ??
+    song?.thumbnail ??
+    song?.thumbnail_url ??
+    song?.coverUrl ??
+    "";
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button size="icon" variant="ghost" aria-label="More" title="Khác">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+
+      {/* ✅ Content style giống SongMoreMenu (mẫu Spotify) */}
+      <DropdownMenuContent
+        align="end"
+        side="bottom"
+        sideOffset={10}
+        collisionPadding={12}
+        className={cn(
+          "w-[320px] rounded-2xl border-border/60 bg-popover/95 p-2 shadow-xl",
+          "backdrop-blur",
+          "z-[100]"
+        )}
+      >
+        {/* Header */}
+        <div className="flex items-center gap-3 rounded-xl px-2 py-2">
+          <div className="h-10 w-10 overflow-hidden rounded-xl bg-muted/30">
+            {coverUrl ? (
+              <img
+                src={coverUrl}
+                alt={title}
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div className="h-full w-full bg-gradient-to-br from-white/10 to-white/0" />
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-semibold">{title}</div>
+            <div className="truncate text-xs opacity-70">{subtitle}</div>
+            <div className="mt-0.5 text-[11px] opacity-60">Upload của bạn</div>
+          </div>
+        </div>
+
+        <DropdownMenuSeparator />
+
+        {/* Nút nhanh (2 cột giống mẫu) */}
+        <div className="grid grid-cols-2 gap-2 px-1 py-1">
+          <Button
+            type="button"
+            variant="secondary"
+            className="justify-start gap-2 rounded-xl"
+            onClick={() => onPlay?.(song)}
+          >
+            <Play className="h-4 w-4" /> Phát
+          </Button>
+
+          <Button
+            type="button"
+            variant="secondary"
+            className="justify-start gap-2 rounded-xl"
+            onClick={() => onDelete?.(song)}
+          >
+            <Trash2 className="h-4 w-4" /> Xoá
+          </Button>
+        </div>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem className="rounded-xl" onClick={() => onCopy?.(song)}>
+          <Link2 className="mr-2 h-4 w-4" />
+          Sao chép link
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          className="rounded-xl text-destructive focus:text-destructive"
+          onClick={() => onDelete?.(song)}
+        >
+          <Trash2 className="mr-2 h-4 w-4" />
+          Xoá bài hát
+        </DropdownMenuItem>
+
+        <div className="px-2 pt-2 text-[11px] opacity-50">
+          Cung cấp bởi {song?.provider ?? "Melodiaverse"}
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export default function UploadsSongsList({
   accessToken,
   pageSize = 20,
@@ -61,7 +169,6 @@ export default function UploadsSongsList({
   onDeleted,
   onRequireLogin, // optional: gọi khi user chưa đăng nhập mà muốn thao tác
 }) {
-
   const token = useMemo(() => {
     return (
       accessToken ||
@@ -106,7 +213,10 @@ export default function UploadsSongsList({
     if (!token) return null;
     setLoadingMe(true);
     try {
-      const res = await http.get("/auth/me", token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+      const res = await http.get(
+        "/auth/me",
+        token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
+      );
       // Doc trả về: { success: true, data: { user: {...} } }
       const user = res?.data?.data?.user;
       setMe(user || null);
@@ -163,7 +273,6 @@ export default function UploadsSongsList({
   useEffect(() => {
     // Load lần đầu
     (async () => {
-
       // Không bắt buộc login để gọi /songs, nhưng muốn lọc "uploads của tôi" thì phải có /auth/me
       if (hasLogin) {
         await fetchMe();
@@ -205,7 +314,6 @@ export default function UploadsSongsList({
   }
 
   function handleLyrics(song) {
-    // Placeholder (chưa có API lyrics trong doc bạn gửi)
     toast.message(`Lyrics chưa được hỗ trợ: ${song?.title || ""}`);
   }
 
@@ -224,9 +332,7 @@ export default function UploadsSongsList({
     }
   }
 
-  async function handleToggleLike(song) {
-    // Placeholder: vì bạn chưa xác nhận endpoint Favorites trong luồng Uploads.
-    // Nếu bạn muốn nối API favorites thật, gửi mình phần doc favorites trong api_document_final.
+  async function handleToggleLike() {
     toast.message("Chưa nối API yêu thích (favorites) cho Uploads.");
   }
 
@@ -246,7 +352,6 @@ export default function UploadsSongsList({
 
     setDeleting(true);
     try {
-      // DELETE /songs/:id (Auth + owner):contentReference[oaicite:6]{index=6}
       await http.delete(`/songs/${songToDelete.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -384,7 +489,6 @@ export default function UploadsSongsList({
                 showList.map((song) => {
                   const active = Number(selectedSongId) === Number(song.id);
 
-                  // “album” trong list có thể không có. Nếu backend trả album.title thì sẽ hiển thị.
                   const albumTitle =
                     song?.album?.title ||
                     song?.album_title ||
@@ -499,31 +603,13 @@ export default function UploadsSongsList({
                           <TooltipContent>Yêu thích</TooltipContent>
                         </Tooltip>
 
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button size="icon" variant="ghost">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-44">
-                            <DropdownMenuItem onClick={() => handlePlay(song)}>
-                              Phát
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleCopyLink(song)}
-                            >
-                              Copy link
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => askDelete(song)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Xoá
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {/* ✅ Menu ba chấm style giống mẫu + có Xoá */}
+                        <UploadSongMoreMenu
+                          song={{ ...song, subtitle }}
+                          onPlay={handlePlay}
+                          onCopy={handleCopyLink}
+                          onDelete={(s) => askDelete(s)}
+                        />
                       </div>
                     </div>
                   );

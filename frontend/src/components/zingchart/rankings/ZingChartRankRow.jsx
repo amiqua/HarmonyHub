@@ -14,20 +14,13 @@ import {
   Minus,
   Mic2,
   Heart,
-  MoreHorizontal,
   ListPlus,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import SongMoreMenu from "@/components/zingchart/common/SongMoreMenu";
 
 function formatDuration(d) {
   if (d == null) return "";
@@ -238,49 +231,22 @@ export default function ZingChartRankRow({
             <Heart className="h-4 w-4" />
           </Button>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                className="h-9 w-9 rounded-full"
-                aria-label="More"
-                title="Khác"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem
-                onClick={() => toast.message("TODO: Thêm vào danh sách phát.")}
-              >
-                Thêm vào danh sách phát
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => toast.message("TODO: Phát tiếp theo.")}
-              >
-                Phát tiếp theo
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(
-                      item?.share_url || window.location.href
-                    );
-                    toast.success("Đã sao chép link.");
-                  } catch (e) {
-                    console.error("[ZingChartRankRow] Copy failed:", e);
-                    toast.error("Không thể sao chép link.");
-                  }
-                }}
-              >
-                Sao chép link
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <SongMoreMenu
+            song={item}
+            align="end"
+            side="bottom"
+            className="h-9 w-9 rounded-full"
+            onLyrics={() => toast.message("TODO: Lời bài hát (UI sau).")}
+            onBlock={() => toast.message("TODO: Chặn (UI/API sau).")}
+            onAddToQueue={() => toast.message("TODO: Thêm vào danh sách phát.")}
+            onPlayNext={() => toast.message("TODO: Phát tiếp theo.")}
+            onPlaySimilar={() => toast.message("TODO: Phát nội dung tương tự.")}
+            onAddToPlaylist={() => {
+              if (!requireLoginIfNeeded("Thêm vào playlist")) return;
+              toast.message("TODO: Thêm vào playlist (UI/Modal sau).");
+            }}
+            onShare={() => toast.message("TODO: Chia sẻ.")}
+          />
         </div>
 
         <div className="min-w-[44px] text-right text-xs text-muted-foreground">

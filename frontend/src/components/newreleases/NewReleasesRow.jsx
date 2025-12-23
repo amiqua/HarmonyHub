@@ -7,26 +7,12 @@
 
 import { useMemo } from "react";
 import { toast } from "sonner";
-import {
-  ArrowDown,
-  ArrowUp,
-  Heart,
-  Minus,
-  MoreHorizontal,
-  Mic2,
-  Play,
-} from "lucide-react";
+import { ArrowDown, ArrowUp, Heart, Minus, Mic2, Play } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import SongMoreMenu from "@/components/zingchart/common/SongMoreMenu";
 
 /**
  * Props:
@@ -82,9 +68,23 @@ export default function NewReleasesRow({
     safeSong?.thumbnail ||
     safeSong?.image ||
     safeSong?.cover ||
+    safeSong?.cover_url ||
+    safeSong?.image_url ||
+    safeSong?.thumbnail_url ||
     "";
 
   const liked = Boolean(safeSong?.liked);
+
+  // Normalize link field để SongMoreMenu copy đúng
+  const menuSong = useMemo(() => {
+    const url =
+      safeSong?.share_url ||
+      safeSong?.url ||
+      safeSong?.link ||
+      safeSong?.audio_url ||
+      "";
+    return { ...safeSong, url, coverUrl };
+  }, [safeSong, coverUrl]);
 
   const safeAction = (fn, okMsg, failMsg, logTag) => {
     try {
@@ -241,81 +241,45 @@ export default function NewReleasesRow({
             <Heart className={cn("size-4", liked && "fill-current")} />
           </Button>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="rounded-full"
-                aria-label="More"
-              >
-                <MoreHorizontal className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem
-                onClick={() =>
-                  safeAction(
-                    onAddToPlaylist,
-                    "Đã chọn thêm vào playlist.",
-                    "Chưa cấu hình thêm vào playlist.",
-                    "AddToPlaylist"
-                  )
-                }
-              >
-                Thêm vào danh sách phát
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={() =>
-                  safeAction(
-                    onPlaySong,
-                    `Phát: ${title}`,
-                    "Không thể phát bài hát.",
-                    "PlayFromMenu"
-                  )
-                }
-              >
-                Phát ngay
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator />
-
-              <DropdownMenuItem
-                onClick={async () => {
-                  const url = safeSong?.link || safeSong?.url || "";
-                  if (!url) {
-                    toast.error("Không có link để sao chép.");
-                    return;
-                  }
-                  try {
-                    await navigator.clipboard.writeText(url);
-                    toast.success("Đã sao chép link.");
-                  } catch (e) {
-                    console.error("[NewReleasesRow] CopyLink failed:", e);
-                    toast.error("Không thể sao chép link.");
-                  }
-                }}
-              >
-                Sao chép link
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={() =>
-                  safeAction(
-                    onShare,
-                    "Đã mở chia sẻ.",
-                    "Chưa cấu hình chia sẻ.",
-                    "Share"
-                  )
-                }
-              >
-                Chia sẻ
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* ✅ Menu ba chấm giống mẫu Spotify */}
+          <SongMoreMenu
+            song={menuSong}
+            align="end"
+            side="bottom"
+            className="rounded-full"
+            onLyrics={() =>
+              safeAction(
+                onOpenLyrics,
+                "Mở lời bài hát.",
+                "Chưa cấu hình mở lời bài hát.",
+                "LyricsFromMenu"
+              )
+            }
+            onBlock={() => toast.message("Chặn (demo).")}
+            onAddToQueue={() =>
+              toast.message("Thêm vào danh sách phát (demo).")
+            }
+            onPlayNext={() => toast.message("Phát tiếp theo (demo).")}
+            onPlaySimilar={() =>
+              toast.message("Phát nội dung tương tự (demo).")
+            }
+            onAddToPlaylist={() =>
+              safeAction(
+                onAddToPlaylist,
+                "Đã chọn thêm vào playlist.",
+                "Chưa cấu hình thêm vào playlist.",
+                "AddToPlaylist"
+              )
+            }
+            onShare={() =>
+              safeAction(
+                onShare,
+                "Đã mở chia sẻ.",
+                "Chưa cấu hình chia sẻ.",
+                "Share"
+              )
+            }
+          />
         </div>
       </div>
     </div>

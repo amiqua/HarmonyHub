@@ -1,10 +1,5 @@
 // FILE: src/services/playlists.api.js
-// Công dụng: Client gọi API playlists (theo backend bạn đang có).
-// - Public: list system playlists
-// - User: list mine, create, update, delete playlist của tôi
-// - Detail: get playlist by id (kèm songs)
-// - Songs: add/remove/reorder bài hát trong playlist
-//
+// Công dụng: Client gọi API playlists.
 // Chuẩn response backend: { success, data, meta? }
 
 import { http } from "@/lib/http";
@@ -19,6 +14,28 @@ function unwrapWithMeta(res) {
     data: res?.data?.data,
     meta: res?.data?.meta,
   };
+}
+
+// Thử nhiều endpoint để tương thích backend khác nhau
+async function tryMany(requestFns) {
+  let lastErr = null;
+
+  for (const fn of requestFns) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const status = err?.response?.status;
+
+      // 404: route không tồn tại | 405: sai method => thử endpoint tiếp theo
+      if (status === 404 || status === 405) continue;
+
+      // Lỗi khác (401, 403, 500...) => ném luôn để UI báo đúng nguyên nhân
+      throw err;
+    }
+  }
+
+  throw lastErr;
 }
 
 // ===== List =====
@@ -40,28 +57,35 @@ export async function listMyPlaylists(params = {}) {
 // ===== CRUD playlist (user) =====
 
 // ✅ Tạo playlist của tôi (auth)
-// Backend bạn có 2 kiểu:
-// - API cũ: POST /api/v1/playlists
-// - API mới bạn đang chỉnh: POST /api/v1/playlists/me
-// -> Mình ưu tiên /me trước, nếu backend chưa có thì đổi sang "/playlists".
+// Chuẩn thường gặp: POST /api/v1/playlists
+// Một số backend khác có: POST /api/v1/playlists/me
 export async function createMyPlaylist(body) {
-  // body: { name }
-  const res = await http.post("/playlists/me", body);
+  const res = await tryMany([
+    () => http.post("/playlists", body),
+    () => http.post("/playlists/me", body),
+  ]);
   return unwrap(res);
 }
 
 // ✅ Đổi tên playlist của tôi (auth)
-// PATCH /api/v1/playlists/me/:id
+// Chuẩn thường gặp: PATCH /api/v1/playlists/:id
+// Một số backend khác có: PATCH /api/v1/playlists/me/:id
 export async function updateMyPlaylist(playlistId, body) {
-  // body: { name }
-  const res = await http.patch(`/playlists/me/${playlistId}`, body);
+  const res = await tryMany([
+    () => http.patch(`/playlists/${playlistId}`, body),
+    () => http.patch(`/playlists/me/${playlistId}`, body),
+  ]);
   return unwrap(res);
 }
 
 // ✅ Xoá playlist của tôi (auth)
-// DELETE /api/v1/playlists/me/:id
+// Chuẩn thường gặp: DELETE /api/v1/playlists/:id
+// Một số backend khác có: DELETE /api/v1/playlists/me/:id
 export async function deleteMyPlaylist(playlistId) {
-  const res = await http.delete(`/playlists/me/${playlistId}`);
+  const res = await tryMany([
+    () => http.delete(`/playlists/${playlistId}`),
+    () => http.delete(`/playlists/me/${playlistId}`),
+  ]);
   return unwrap(res);
 }
 
@@ -69,13 +93,12 @@ export async function deleteMyPlaylist(playlistId) {
 
 // Xem chi tiết playlist (kèm songs)
 // GET /api/v1/playlists/:id
-// (backend: system ai cũng xem được; user thì cần owner)
 export async function getPlaylistById(playlistId) {
   const res = await http.get(`/playlists/${playlistId}`);
   return unwrap(res);
 }
 
-// (tuỳ chọn) Nếu bạn muốn gọi thẳng route mine:
+// (tuỳ chọn) Nếu backend bạn có route mine:
 // GET /api/v1/playlists/me/:id
 export async function getMyPlaylistById(playlistId) {
   const res = await http.get(`/playlists/me/${playlistId}`);

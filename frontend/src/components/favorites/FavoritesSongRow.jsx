@@ -8,6 +8,7 @@
 import { cn } from "@/lib/utils";
 import { Heart, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import SongMoreMenu from "@/components/zingchart/common/SongMoreMenu";
 
 /**
  * @typedef {Object} FavoriteSong
@@ -54,6 +55,13 @@ export default function FavoritesSongRow({
     const v = Number(n);
     if (!Number.isFinite(v)) return "";
     return v.toLocaleString("en-US");
+  };
+
+  const menuSong = {
+    ...s,
+    coverUrl: s.coverUrl,
+    plays: s.plays,
+    url: s.url || s.audio_url || "",
   };
 
   return (
@@ -128,7 +136,7 @@ export default function FavoritesSongRow({
       </div>
 
       {/* Right controls */}
-      <div className="col-span-5 flex items-center justify-end gap-3 md:col-span-2">
+      <div className="col-span-5 flex items-center justify-end gap-2 md:col-span-2">
         {/* Like */}
         <Button
           type="button"
@@ -146,6 +154,15 @@ export default function FavoritesSongRow({
         >
           <Heart className={cn("size-4", s.liked && "fill-current")} />
         </Button>
+
+        {/* ✅ Menu ba chấm giống mẫu */}
+        <SongMoreMenu
+          song={menuSong}
+          align="end"
+          side="bottom"
+          className="h-9 w-9 rounded-full"
+          onPlayNext={() => onPlaySong?.(s)}
+        />
 
         {/* Duration */}
         <div className="w-[52px] text-right text-xs text-muted-foreground tabular-nums">

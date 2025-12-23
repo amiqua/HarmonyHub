@@ -119,7 +119,8 @@ export default function LibraryPageContent({
         "/favorites/songs",
         "/favorite-songs",
       ],
-      playlists: ["/me/playlists", "/playlists/me", "/playlists"],
+      playlists: ["/playlists/me", "/playlists"],
+
       history: [
         // ✅ backend chuẩn của dự án: GET /history/me
         "/history/me",

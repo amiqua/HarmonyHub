@@ -1,176 +1,230 @@
+// FILE: backend/src/modules/playlists/playlists.service.js
 /**
- * Công dụng: Khai báo các API cho Playlist.
- * - Public: xem playlist hệ thống (system)
- * - User: xem playlist của tôi, tạo/sửa/xoá playlist của tôi
- * - Quản lý bài hát trong playlist: thêm/xoá/sắp xếp
- *
- * Ghi chú:
- * - Bảng playlists có `type` (system | user) và `user_id`.
- * - Với playlist type = "user": chỉ chủ sở hữu (user_id) mới được xem/sửa/xoá.
+ * Công dụng: Xử lý nghiệp vụ cho module Playlists.
+ * - Controller gọi service, service gọi repository để thao tác DB.
+ * - File này PHẢI export các hàm mà playlists.controller.js đang import.
  */
 
-import { Router } from "express";
+import { ApiError } from "../../errors/ApiError.js";
+import { parsePagination, buildMeta } from "../../utils/pagination.js";
+import * as playlistsRepo from "./playlists.repository.js";
 
-import { auth } from "../../middlewares/auth.js";
-import { validate } from "../../middlewares/validate.js";
+function requireUser(userPayload) {
+  const userId = userPayload?.userId;
+  if (!userId) throw new ApiError(401, "Bạn cần đăng nhập.");
+  return Number(userId);
+}
 
-import * as playlistsController from "./playlists.controller.js";
-import {
-  listSystemPlaylistsQuerySchema,
-  playlistIdParamSchema,
-  createPlaylistSchema,
-  updatePlaylistSchema,
-  addSongToPlaylistSchema,
-  playlistSongParamSchema,
-  reorderPlaylistSchema,
-} from "./playlists.validation.js";
+function ensureOwnerOrThrow(userId, playlist) {
+  if (!playlist) throw new ApiError(404, "Không tìm thấy playlist.");
+  if (playlist.type !== "user") return; // system playlist: cho phép public xem
+  if (Number(playlist.user_id) !== Number(userId)) {
+    throw new ApiError(403, "Bạn không có quyền truy cập playlist này.");
+  }
+}
 
-const router = Router();
+async function getPlaylistOrThrow(playlistId) {
+  const id = Number(playlistId);
+  if (!Number.isFinite(id) || id <= 0)
+    throw new ApiError(400, "playlistId không hợp lệ.");
+  const playlist = await playlistsRepo.getById(id);
+  if (!playlist) throw new ApiError(404, "Không tìm thấy playlist.");
+  return playlist;
+}
 
-/**
- * Danh sách playlist hệ thống
- * GET /api/v1/playlists/system?page=&limit=&q=
- */
-router.get(
-  "/system",
-  validate({ query: listSystemPlaylistsQuerySchema }),
-  playlistsController.listSystem
-);
+export async function listSystem(query = {}) {
+  const { page, limit, offset } = parsePagination(query);
+  const q = typeof query.q === "string" ? query.q.trim() : undefined;
 
-/**
- * Danh sách playlist của tôi
- * GET /api/v1/playlists/me?page=&limit=&q=
- */
-router.get(
-  "/me",
-  auth(),
-  validate({ query: listSystemPlaylistsQuerySchema }),
-  playlistsController.listMine
-);
+  const { rows, total } = await playlistsRepo.listSystem({ q, limit, offset });
+  return {
+    data: rows,
+    meta: buildMeta({ page, limit, total }),
+  };
+}
 
-/**
- * ✅ NEW: Tạo playlist của tôi (nhất quán theo /me)
- * POST /api/v1/playlists/me
- * body: { name }
- */
-router.post(
-  "/me",
-  auth(),
-  validate({ body: createPlaylistSchema }),
-  playlistsController.createMine
-);
+export async function listMine(userPayload, query = {}) {
+  const userId = requireUser(userPayload);
+  const { page, limit, offset } = parsePagination(query);
+  const q = typeof query.q === "string" ? query.q.trim() : undefined;
 
-/**
- * ✅ NEW: Xem chi tiết playlist của tôi (kèm songs)
- * GET /api/v1/playlists/me/:id
- */
-router.get(
-  "/me/:id",
-  auth(),
-  validate({ params: playlistIdParamSchema }),
-  playlistsController.getMineById
-);
+  const { rows, total } = await playlistsRepo.listMine({
+    userId,
+    q,
+    limit,
+    offset,
+  });
+  return {
+    data: rows,
+    meta: buildMeta({ page, limit, total }),
+  };
+}
 
-/**
- * ✅ NEW: Đổi tên playlist của tôi
- * PATCH /api/v1/playlists/me/:id
- */
-router.patch(
-  "/me/:id",
-  auth(),
-  validate({ params: playlistIdParamSchema, body: updatePlaylistSchema }),
-  playlistsController.updateMine
-);
+export async function create(userPayload, body) {
+  const userId = requireUser(userPayload);
+  const name = body?.name?.trim?.() || "";
 
-/**
- * ✅ NEW: Xoá playlist của tôi
- * DELETE /api/v1/playlists/me/:id
- */
-router.delete(
-  "/me/:id",
-  auth(),
-  validate({ params: playlistIdParamSchema }),
-  playlistsController.removeMine
-);
+  if (!name) throw new ApiError(400, "Tên playlist là bắt buộc.");
 
-/**
- * Tạo playlist của user (API cũ vẫn giữ)
- * POST /api/v1/playlists
- */
-router.post(
-  "/",
-  auth(),
-  validate({ body: createPlaylistSchema }),
-  playlistsController.create
-);
+  try {
+    const created = await playlistsRepo.createUserPlaylist({ userId, name });
+    return created;
+  } catch (err) {
+    // unique_violation (Postgres)
+    if (err?.code === "23505") throw new ApiError(409, "Playlist đã tồn tại.");
+    throw err;
+  }
+}
 
-/**
- * Xem chi tiết playlist (kèm bài hát)
- * GET /api/v1/playlists/:id
- * - Nếu playlist là user playlist -> yêu cầu đăng nhập và phải là chủ sở hữu
- */
-router.get(
-  "/:id",
-  auth({ optional: true }),
-  validate({ params: playlistIdParamSchema }),
-  playlistsController.getById
-);
+// Alias “/playlists/me”
+export async function createMine(userPayload, body) {
+  return create(userPayload, body);
+}
 
-/**
- * Đổi tên playlist (chỉ owner) (API cũ)
- * PATCH /api/v1/playlists/:id
- */
-router.patch(
-  "/:id",
-  auth(),
-  validate({ params: playlistIdParamSchema, body: updatePlaylistSchema }),
-  playlistsController.update
-);
+export async function getById(userPayload, playlistId) {
+  const playlist = await getPlaylistOrThrow(playlistId);
 
-/**
- * Xoá playlist (chỉ owner) (API cũ)
- * DELETE /api/v1/playlists/:id
- */
-router.delete(
-  "/:id",
-  auth(),
-  validate({ params: playlistIdParamSchema }),
-  playlistsController.remove
-);
+  // user playlist: chỉ owner xem được
+  if (playlist.type === "user") {
+    const userId = requireUser(userPayload);
+    ensureOwnerOrThrow(userId, playlist);
+  }
 
-/**
- * Thêm bài hát vào playlist (chỉ owner)
- * POST /api/v1/playlists/:id/songs
- * body: { songId, position? }
- */
-router.post(
-  "/:id/songs",
-  auth(),
-  validate({ params: playlistIdParamSchema, body: addSongToPlaylistSchema }),
-  playlistsController.addSong
-);
+  const songs = await playlistsRepo.getSongs(Number(playlistId));
+  return { ...playlist, songs };
+}
 
-/**
- * Xoá bài hát khỏi playlist (chỉ owner)
- * DELETE /api/v1/playlists/:id/songs/:songId
- */
-router.delete(
-  "/:id/songs/:songId",
-  auth(),
-  validate({ params: playlistSongParamSchema }),
-  playlistsController.removeSong
-);
+export async function getMineById(userPayload, playlistId) {
+  const userId = requireUser(userPayload);
+  const playlist = await getPlaylistOrThrow(playlistId);
+  ensureOwnerOrThrow(userId, playlist);
 
-/**
- * Sắp xếp lại thứ tự bài hát trong playlist (chỉ owner)
- * PATCH /api/v1/playlists/:id/songs/reorder
- * body: { items: [{ songId, position }] }
- */
-router.patch(
-  "/:id/songs/reorder",
-  auth(),
-  validate({ params: playlistIdParamSchema, body: reorderPlaylistSchema }),
-  playlistsController.reorder
-);
+  const songs = await playlistsRepo.getSongs(Number(playlistId));
+  return { ...playlist, songs };
+}
 
-export default router;
+export async function update(userPayload, playlistId, body) {
+  const userId = requireUser(userPayload);
+  const playlist = await getPlaylistOrThrow(playlistId);
+  ensureOwnerOrThrow(userId, playlist);
+
+  const name = body?.name?.trim?.() || "";
+  if (!name) throw new ApiError(400, "Tên playlist là bắt buộc.");
+
+  try {
+    const updated = await playlistsRepo.updateName({
+      playlistId: Number(playlistId),
+      name,
+    });
+    return updated;
+  } catch (err) {
+    if (err?.code === "23505") throw new ApiError(409, "Playlist đã tồn tại.");
+    throw err;
+  }
+}
+
+export async function updateMine(userPayload, playlistId, body) {
+  return update(userPayload, playlistId, body);
+}
+
+export async function remove(userPayload, playlistId) {
+  const userId = requireUser(userPayload);
+  const playlist = await getPlaylistOrThrow(playlistId);
+  ensureOwnerOrThrow(userId, playlist);
+
+  const ok = await playlistsRepo.deletePlaylist(Number(playlistId));
+  if (!ok) throw new ApiError(404, "Không tìm thấy playlist.");
+  return { message: "Đã xoá playlist." };
+}
+
+export async function removeMine(userPayload, playlistId) {
+  return remove(userPayload, playlistId);
+}
+
+export async function addSong(userPayload, playlistId, body) {
+  const userId = requireUser(userPayload);
+  const playlist = await getPlaylistOrThrow(playlistId);
+  ensureOwnerOrThrow(userId, playlist);
+
+  const songId = Number(body?.songId);
+  const position = body?.position == null ? undefined : Number(body.position);
+
+  if (!Number.isFinite(songId) || songId <= 0) {
+    throw new ApiError(400, "songId không hợp lệ.");
+  }
+  if (position !== undefined && (!Number.isFinite(position) || position < 0)) {
+    throw new ApiError(400, "position không hợp lệ.");
+  }
+
+  const song = await playlistsRepo.getSongById(songId);
+  if (!song) throw new ApiError(404, "Không tìm thấy bài hát.");
+
+  try {
+    await playlistsRepo.addSongToPlaylist({
+      playlistId: Number(playlistId),
+      songId,
+      position,
+    });
+    return { message: "Đã thêm bài hát vào playlist." };
+  } catch (err) {
+    if (err?.code === "23505")
+      throw new ApiError(409, "Bài hát đã có trong playlist.");
+    throw err;
+  }
+}
+
+export async function removeSong(userPayload, playlistId, songId) {
+  const userId = requireUser(userPayload);
+  const playlist = await getPlaylistOrThrow(playlistId);
+  ensureOwnerOrThrow(userId, playlist);
+
+  const sId = Number(songId);
+  if (!Number.isFinite(sId) || sId <= 0)
+    throw new ApiError(400, "songId không hợp lệ.");
+
+  const ok = await playlistsRepo.removeSongFromPlaylist({
+    playlistId: Number(playlistId),
+    songId: sId,
+  });
+  if (!ok) throw new ApiError(404, "Bài hát không tồn tại trong playlist.");
+  return { message: "Đã xoá bài hát khỏi playlist." };
+}
+
+export async function reorder(userPayload, playlistId, body) {
+  const userId = requireUser(userPayload);
+  const playlist = await getPlaylistOrThrow(playlistId);
+  ensureOwnerOrThrow(userId, playlist);
+
+  const items = Array.isArray(body?.items) ? body.items : null;
+  if (!items || items.length === 0)
+    throw new ApiError(400, "items không hợp lệ.");
+
+  const normalized = items.map((it) => ({
+    songId: Number(it?.songId),
+    position: Number(it?.position),
+  }));
+
+  for (const it of normalized) {
+    if (!Number.isFinite(it.songId) || it.songId <= 0)
+      throw new ApiError(400, "items.songId không hợp lệ.");
+    if (!Number.isFinite(it.position) || it.position < 0)
+      throw new ApiError(400, "items.position không hợp lệ.");
+  }
+
+  // Không cho trùng songId
+  const set = new Set(normalized.map((x) => x.songId));
+  if (set.size !== normalized.length)
+    throw new ApiError(400, "items bị trùng songId.");
+
+  // Chỉ reorder những bài đang có trong playlist
+  const current = await playlistsRepo.getSongs(Number(playlistId));
+  const currentIds = new Set(current.map((s) => Number(s.id)));
+  for (const it of normalized) {
+    if (!currentIds.has(it.songId)) {
+      throw new ApiError(404, `Bài hát ${it.songId} không có trong playlist.`);
+    }
+  }
+
+  await playlistsRepo.reorderSongs(Number(playlistId), normalized);
+  return { message: "Đã sắp xếp lại playlist." };
+}
