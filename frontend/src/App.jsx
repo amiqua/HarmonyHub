@@ -1,14 +1,6 @@
-// FILE: src/App.jsx
 import { useEffect, useMemo, useState } from "react";
-import {
-  Route,
-  Routes,
-  useLocation,
-  useNavigate,
-  Navigate, // ✅ NEW (redirect /playlists -> /library?tab=playlists)
-} from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query"; // ✅ dùng trong AppInner
 
 import AppProviders from "@/components/app/AppProviders";
 import AppShell from "@/components/layout/AppShell";
@@ -17,20 +9,15 @@ import Sidebar from "@/components/layout/Sidebar";
 import LoginDialog from "@/components/auth/LoginDialog";
 import RegisterDialog from "@/components/auth/RegisterDialog";
 import AddToPlaylistDialog from "@/components/playlist/AddToPlaylistDialog";
-
 import GlobalAudioPlayer from "@/components/player/GlobalAudioPlayer";
 
-import { addSongToHistory } from "@/services/history.api";
+import AppRouter from "@/router/AppRouter";
 
-import HomePage from "@/pages/HomePage";
-import UploadsPage from "@/pages/UploadsPage";
-import ZingChartPage from "@/pages/ZingChartPage";
-import LibraryPage from "@/pages/LibraryPage";
-import NewReleasesPage from "@/pages/NewReleasesPage";
-import GenresPage from "@/pages/GenresPage";
+import { useAuthStore } from "@/store/authStore";
+import { useAuth } from "@/hooks/useAuth";
+import { usePlayer } from "@/hooks/usePlayer";
 
 export default function App() {
-  // ✅ Provider bọc ngoài, KHÔNG dùng useQueryClient ở đây
   return (
     <AppProviders>
       <AppInner />
@@ -42,20 +29,13 @@ function AppInner() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
 
-  const [user, setUser] = useState(() => {
-    try {
-      const raw = localStorage.getItem("user");
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  });
+  const { user, logout } = useAuthStore();
+  useAuth(); // Auto-fetch user
 
-  const [nowPlaying, setNowPlaying] = useState(null);
+  const { handlePlaySong } = usePlayer();
 
   const navigate = useNavigate();
   const location = useLocation();
-  const qc = useQueryClient(); // ✅ giờ OK vì nằm trong AppProviders
 
   const navMap = useMemo(
     () => ({
@@ -63,11 +43,9 @@ function AppInner() {
       zingchart: "/zingchart",
       uploads: "/uploads",
       library: "/library",
-      // ✅ gộp Favorites + History vào Library bằng query tab
       history: "/library?tab=history",
       favorites: "/library?tab=liked",
-      playlists: "/library?tab=playlists", // ✅ playlists nằm trong Library
-
+      playlists: "/library?tab=playlists",
       "new-chart": "/new-releases",
       genres: "/genres",
     }),
@@ -79,8 +57,6 @@ function AppInner() {
 
     if (p.startsWith("/uploads")) return "uploads";
     if (p.startsWith("/zingchart")) return "zingchart";
-
-    // ✅ /library?tab=... => active theo tab
     if (p.startsWith("/library")) {
       const sp = new URLSearchParams(location.search);
       const t = sp.get("tab");
@@ -93,112 +69,28 @@ function AppInner() {
 
     if (p.startsWith("/history")) return "history";
     if (p.startsWith("/favorites")) return "favorites";
-
     if (p.startsWith("/new-releases")) return "new-chart";
     if (p.startsWith("/genres")) return "genres";
     return "discover";
-  }, [location.pathname, location.search]); // ✅ NEW: include search
+  }, [location.pathname, location.search]);
 
   const handleNavigate = (key) => {
     const to = navMap[key];
-
     if (!to) {
       toast.error(`Chưa cấu hình route cho menu: ${key}`);
-      console.error("[App] Missing navMap for key:", key, navMap);
       return;
     }
-
-    // ✅ NEW: so sánh cả search (vì /library?tab=playlists)
     const current = `${location.pathname}${location.search}`;
     if (current === to) return;
-
     navigate(to);
-    toast.success("Điều hướng thành công.");
   };
 
-  const handlePlaySong = (song) => {
-    try {
-      if (!song?.audio_url) {
-        toast.error("Bài hát này chưa có audio_url để phát.");
-        return;
-      }
-
-      setNowPlaying(song);
-      toast.success(`Đang phát: ${song?.title ?? "Bài hát"}`);
-
-      const accessToken = localStorage.getItem("accessToken");
-      if (!accessToken) return; // Hướng A: chưa login thì không lưu history
-
-      const songId = song?.id;
-      if (!songId) return;
-
-      // ✅ Realtime: thông báo cho trang /history đẩy bài này lên đầu ngay
-      window.dispatchEvent(
-        new CustomEvent("history:played", {
-          detail: {
-            songId,
-            song,
-            played_at: new Date().toISOString(),
-          },
-        })
-      );
-
-      // helper: lấy song_id từ row bất kỳ
-      const getSongKey = (r) => r?.song_id ?? r?.songId ?? r?.id ?? null;
-
-      const upsertToTop = (arr, row) => {
-        const k = getSongKey(row);
-        if (!k) return arr;
-
-        const filtered = (arr ?? []).filter((x) => getSongKey(x) !== k);
-        return [row, ...filtered];
-      };
-
-      addSongToHistory(songId)
-        .then((saved) => {
-          // tạo "row" giống listMine đang trả về
-          const row = {
-            id: saved?.id ?? `tmp-${songId}`,
-            played_at: saved?.played_at ?? new Date().toISOString(),
-            duration_listened: saved?.duration_listened ?? null,
-
-            song_id: songId,
-            title: song?.title ?? "Bài hát",
-            duration: song?.duration ?? null,
-            audio_url: song?.audio_url ?? null,
-            release_date: song?.release_date ?? null,
-          };
-
-          // ✅ cập nhật cache ngay lập tức cho mọi query bắt đầu bằng ["history","me"]
-          qc.setQueriesData({ queryKey: ["history", "me"] }, (old) => {
-            // old có thể là array hoặc object {rows,total}
-            if (Array.isArray(old)) return upsertToTop(old, row);
-
-            const rows = Array.isArray(old?.rows) ? old.rows : null;
-            if (rows) return { ...old, rows: upsertToTop(rows, row) };
-
-            // chưa có cache -> tạo mới
-            return [row];
-          });
-
-          // ✅ đồng bộ lại từ server (để lấy đúng total/field chuẩn)
-          qc.invalidateQueries({ queryKey: ["history", "me"] });
-        })
-        .catch((err) => {
-          console.warn(
-            "[App] addSongToHistory failed:",
-            err?.response?.data || err
-          );
-        });
-    } catch (err) {
-      console.error("[App] handlePlaySong failed:", err);
-      toast.error("Phát bài hát thất bại.");
-    }
+  const handleLogoutClick = () => {
+    logout(); // uses Zustand store logic
+    window.dispatchEvent(new Event("auth:changed"));
+    navigate("/");
+    toast.success("Đã đăng xuất.");
   };
-
-  useEffect(() => {
-    console.log("[App] Path:", location.pathname);
-  }, [location.pathname]);
 
   return (
     <AppShell
@@ -215,18 +107,7 @@ function AppInner() {
           user={user}
           onLoginClick={() => setLoginOpen(true)}
           onRegisterClick={() => setRegisterOpen(true)}
-          onLogoutClick={() => {
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
-            localStorage.removeItem("user");
-            setUser(null);
-
-            // ✅ để các page (Library) sync token ngay trong cùng tab
-            window.dispatchEvent(new Event("auth:changed"));
-
-            navigate("/");
-            toast.success("Đã đăng xuất.");
-          }}
+          onLogoutClick={handleLogoutClick}
           onUpgradeClick={() => console.log("[App] Upgrade")}
           onDownloadClick={() => console.log("[App] Download")}
           onSettingsClick={() => console.log("[App] Settings")}
@@ -234,115 +115,45 @@ function AppInner() {
         />
       }
     >
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <HomePage
-              onLogin={() => setLoginOpen(true)}
-              onPlaySong={handlePlaySong}
-              onGoZingChart={() => handleNavigate("zingchart")}
-            />
-          }
-        />
-
-        <Route
-          path="/uploads"
-          element={
-            <UploadsPage
-              onRequireLogin={() => setLoginOpen(true)}
-              onPlaySong={handlePlaySong}
-            />
-          }
-        />
-
-        <Route
-          path="/zingchart"
-          element={
-            <ZingChartPage
-              onRequireLogin={() => setLoginOpen(true)}
-              onPlaySong={handlePlaySong}
-            />
-          }
-        />
-
-        <Route
-          path="/library"
-          element={
-            <LibraryPage
-              onLogin={() => setLoginOpen(true)}
-              onPlaySong={handlePlaySong}
-              onSelectPlaylist={(pl) =>
-                console.log("[App] Select playlist:", pl)
-              }
-            />
-          }
-        />
-
-        {/* ✅ giữ link cũ: /history -> Library tab */}
-        <Route
-          path="/history"
-          element={<Navigate to="/library?tab=history" replace />}
-        />
-
-        {/* ✅ giữ link cũ: /favorites -> Library tab */}
-        <Route
-          path="/favorites"
-          element={<Navigate to="/library?tab=liked" replace />}
-        />
-
-        {/* ✅ NEW: /playlists chuyển về tab playlists trong Library */}
-        <Route
-          path="/playlists/*"
-          element={<Navigate to="/library?tab=playlists" replace />}
-        />
-
-        <Route
-          path="/new-releases"
-          element={
-            <NewReleasesPage onRequireLogin={() => setLoginOpen(true)} />
-          }
-        />
-
-        <Route path="/genres" element={<GenresPage />} />
-      </Routes>
-
-      <LoginDialog
-        open={loginOpen}
-        onOpenChange={setLoginOpen}
-        onSuccess={({ user }) => {
-          setUser(user);
-          localStorage.setItem("user", JSON.stringify(user ?? null));
-          setLoginOpen(false);
-          toast.success("Đăng nhập thành công!");
-
-          // ✅ để các page (Library) sync token ngay trong cùng tab
-          window.dispatchEvent(new Event("auth:changed"));
-
-          qc.invalidateQueries({ queryKey: ["history", "me"] });
-        }}
+      <AppRouter 
+        onLogin={() => setLoginOpen(true)} 
+        onPlaySong={handlePlaySong} 
+        onNavigate={handleNavigate}
       />
 
-      <RegisterDialog
-        open={registerOpen}
-        onOpenChange={setRegisterOpen}
-        onSuccess={({ user }) => {
-          setUser(user);
-          localStorage.setItem("user", JSON.stringify(user ?? null));
-          setRegisterOpen(false);
-          toast.success("Đăng ký thành công!");
+      <GlobalAudioPlayer />
 
-          // ✅ để các page (Library) sync token ngay trong cùng tab
-          window.dispatchEvent(new Event("auth:changed"));
+      {loginOpen && (
+        <LoginDialog
+          open={loginOpen}
+          onOpenChange={setLoginOpen}
+          onSwitchRegister={() => {
+            setLoginOpen(false);
+            setRegisterOpen(true);
+          }}
+          onSuccess={() => {
+            setLoginOpen(false);
+            window.dispatchEvent(new Event("auth:changed")); // sync Library
+          }}
+        />
+      )}
 
-          qc.invalidateQueries({ queryKey: ["history", "me"] });
-        }}
-      />
+      {registerOpen && (
+        <RegisterDialog
+          open={registerOpen}
+          onOpenChange={setRegisterOpen}
+          onSwitchLogin={() => {
+            setRegisterOpen(false);
+            setLoginOpen(true);
+          }}
+          onSuccess={() => {
+            setRegisterOpen(false);
+            window.dispatchEvent(new Event("auth:changed")); // sync Library
+          }}
+        />
+      )}
 
-      {/* ✅ Render dialog global ở đây (đúng chỗ) */}
-      <AddToPlaylistDialog onRequireLogin={() => setLoginOpen(true)} />
-
-      <GlobalAudioPlayer song={nowPlaying} />
+      <AddToPlaylistDialog />
     </AppShell>
   );
 }
