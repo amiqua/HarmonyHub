@@ -1,0 +1,131 @@
+// =============================================================
+// COMPONENTS — Input / Textarea / Label
+// =============================================================
+@use "abstracts" as *;
+
+// ── Label ─────────────────────────────────────────────────────
+
+.label {
+  display: block;
+  font-size: $fs-sm;
+  font-weight: $fw-medium;
+  color: $color-text-primary;
+  margin-bottom: $s-2;
+  cursor: pointer;
+
+  &--required::after {
+    content: " *";
+    color: $color-danger;
+  }
+}
+
+// ── Input ─────────────────────────────────────────────────────
+
+.input {
+  width: 100%;
+  height: 40px;
+  padding: 0 $s-3;
+  border: 1px solid $color-border;
+  border-radius: $r-md;
+  background: $color-bg-input;
+  color: $color-text-primary;
+  font-family: $font-sans;
+  font-size: $fs-sm;
+  line-height: 1;
+  outline: none;
+  transition: border-color $ease-fast, background $ease-fast, box-shadow $ease-fast;
+
+  &::placeholder { color: $color-text-secondary; }
+
+  &:hover:not(:disabled) {
+    border-color: $color-border-hover;
+    background: $color-bg-overlay;
+  }
+
+  &:focus {
+    border-color: $color-border-focus;
+    background: $color-bg-overlay;
+    box-shadow: 0 0 0 3px $color-accent-dim;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &--error {
+    border-color: $color-danger;
+
+    &:focus { box-shadow: 0 0 0 3px rgba($color-danger, 0.2); }
+  }
+
+  &--sm {
+    height: 32px;
+    font-size: $fs-xs;
+    padding: 0 $s-2;
+  }
+
+  &--lg {
+    height: 48px;
+    font-size: $fs-base;
+  }
+}
+
+// ── Textarea ──────────────────────────────────────────────────
+
+.textarea {
+  @extend .input;
+  height: auto;
+  min-height: 88px;
+  padding: $s-3;
+  resize: vertical;
+  line-height: $lh-base;
+}
+
+// ── Input group (icon prefix/suffix) ─────────────────────────
+
+.input-group {
+  position: relative;
+
+  .input {
+    padding-left: $s-9;
+  }
+
+  &__icon {
+    position: absolute;
+    left: $s-3;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    color: $color-text-secondary;
+    pointer-events: none;
+  }
+
+  &--suffix .input { padding-right: $s-9; padding-left: $s-3; }
+
+  &__suffix {
+    position: absolute;
+    right: $s-3;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $color-text-secondary;
+  }
+}
+
+// ── Field wrapper (label + input + error msg) ─────────────────
+
+.field {
+  @include flex-col($s-2);
+
+  &__error {
+    font-size: $fs-xs;
+    color: $color-danger;
+    margin-top: $s-1;
+  }
+
+  &__hint {
+    font-size: $fs-xs;
+    color: $color-text-secondary;
+  }
+}

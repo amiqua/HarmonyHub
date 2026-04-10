@@ -1,6 +1,10 @@
 import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge"
 
+/**
+ * cn — class name utility
+ * Merges class names cleanly using clsx.
+ * No longer needs tailwind-merge since we use SCSS classes.
+ */
 export function cn(...inputs) {
-  return twMerge(clsx(inputs));
+  return clsx(inputs);
 }

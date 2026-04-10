@@ -1,0 +1,26 @@
+// =============================================================
+// THEMES — Overrides
+// Use classes or data-attributes on <html> to toggle
+// =============================================================
+@use "abstracts" as *;
+
+// By default, Nocturne is a dark theme, so :root is dark.
+// If you want to support light theme, you can redefine CSS custom properties here
+// and map SCSS variables to them, OR simply override properties under a selector.
+
+// Example Light mode (if toggled via class "light"):
+.light {
+  $color-bg-base: $light-bg-base;
+  $color-bg-elevated: $light-bg-elevated;
+  $color-bg-overlay: $light-bg-overlay;
+  $color-bg-input: $light-bg-input;
+  $color-accent: $light-accent;
+  $color-text-primary: $light-text-primary;
+  $color-text-secondary: $light-text-secondary;
+  $color-border: $light-border;
+
+  // We would realistically use CSS variables e.g. var(--bg-base)
+  // for a true dynamic theme toggle.
+  // For this pure SCSS migration with static vars, we'd need to re-declare backgrounds.
+  // Since you mentioned "Nocturne" (Dark), we'll focus mostly on dark mode being the anchor.
+}

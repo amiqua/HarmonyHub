@@ -1,0 +1,8 @@
+// =============================================================
+// ABSTRACTS — Barrel
+// Re-exports everything so consumers use:
+//   @use 'abstracts' as *;
+// =============================================================
+@forward "variables";
+@forward "functions";
+@forward "mixins";

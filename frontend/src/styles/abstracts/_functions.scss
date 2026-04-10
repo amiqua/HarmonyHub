@@ -1,0 +1,53 @@
+// =============================================================
+// ABSTRACTS — Functions
+// Pure Sass functions — no side effects, no CSS output
+// =============================================================
+@use "sass:math";
+@use "sass:color";
+
+/// Convert px → rem
+/// @param {Number} $px - pixel value (unitless)
+/// @param {Number} $base - base font size in px (default: 16)
+/// @return {Number} - rem value
+@function rem($px, $base: 16) {
+  @return math.div($px, $base) * 1rem;
+}
+
+/// Convert px → em
+/// @param {Number} $px - pixel value (unitless)
+/// @param {Number} $base - base font size in px (default: 16)
+/// @return {Number} - em value
+@function em($px, $base: 16) {
+  @return math.div($px, $base) * 1em;
+}
+
+/// Fluid sizing with clamp()
+/// Scales linearly between $min-vw and $max-vw
+/// @example: font-size: fluid(14px, 18px);
+@function fluid($min-size, $max-size, $min-vw: 320px, $max-vw: 1280px) {
+  $slope: math.div($max-size - $min-size, $max-vw - $min-vw);
+  $intercept: $min-size - $slope * $min-vw;
+
+  @return clamp(#{$min-size}, #{$intercept} + #{$slope * 100}vw, #{$max-size});
+}
+
+/// Add alpha channel to a hex color
+/// @param {Color} $color
+/// @param {Number} $alpha - 0 to 1
+@function alpha($color, $alpha) {
+  @return rgba($color, $alpha);
+}
+
+/// Lighten color by mixing with white
+/// @param {Color} $color
+/// @param {Number} $amount - percentage 0-100
+@function tint($color, $amount) {
+  @return color.mix(white, $color, $amount);
+}
+
+/// Darken color by mixing with black
+/// @param {Color} $color
+/// @param {Number} $amount - percentage 0-100
+@function shade($color, $amount) {
+  @return color.mix(black, $color, $amount);
+}

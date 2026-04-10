@@ -1,0 +1,109 @@
+// =============================================================
+// LAYOUT — AppShell
+// Main 3-zone grid: sidebar | (topbar + content + player)
+// =============================================================
+@use "abstracts" as *;
+
+// ── Keyframes ─────────────────────────────────────────────────
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-bottom {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// ── App Shell ─────────────────────────────────────────────────
+
+.app-shell {
+  display: grid;
+  grid-template-columns: $sidebar-width 1fr;
+  grid-template-rows: 1fr;
+  min-height: 100vh;
+  width: 100%;
+  background: $color-bg-base;
+  color: $color-text-primary;
+
+  // Sidebar is hidden on mobile — cover the full width
+  @media (max-width: calc(#{$bp-md} - 1px)) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ── Sidebar zone ──────────────────────────────────────────────
+
+.app-shell__sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: $color-bg-elevated;
+  border-right: 1px solid $color-border;
+  z-index: $z-sidebar;
+
+  @media (max-width: calc(#{$bp-md} - 1px)) {
+    display: none;
+  }
+}
+
+// ── Main column ───────────────────────────────────────────────
+
+.app-shell__main {
+  @include flex-col;
+  min-width: 0;
+  min-height: 100vh;
+  // Leave room for the sticky player at the bottom
+  padding-bottom: $player-height;
+}
+
+// ── Topbar zone ───────────────────────────────────────────────
+
+.app-shell__topbar {
+  position: sticky;
+  top: 0;
+  z-index: $z-topbar;
+  height: $topbar-height;
+  @include flex-start($s-3);
+  padding: 0 $s-5;
+  background: rgba($color-bg-base, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid $color-border;
+  flex-shrink: 0;
+}
+
+// ── Page content zone ─────────────────────────────────────────
+
+.app-shell__content {
+  flex: 1;
+  min-height: 0;
+  padding: $s-6 $s-5;
+  overflow-y: auto;
+  @include custom-scrollbar;
+
+  @include motion-safe {
+    animation: fade-in 250ms ease;
+  }
+}

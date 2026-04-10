@@ -1,0 +1,76 @@
+// =============================================================
+// BASE — Typography
+// Google Fonts imports + base type system
+// =============================================================
+@use "abstracts" as *;
+
+// ── Google Fonts ───────────────────────────────────────────────
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+// ── Base ───────────────────────────────────────────────────────
+body {
+  font-family: $font-sans;
+  font-size: $fs-base;
+  font-weight: $fw-regular;
+  line-height: $lh-base;
+  color: $color-text-primary;
+  background-color: $color-bg-base;
+}
+
+// ── Headings ───────────────────────────────────────────────────
+h1, h2, h3, h4, h5, h6 {
+  font-family: $font-display;
+  font-weight: $fw-bold;
+  line-height: $lh-tight;
+  color: $color-text-primary;
+  letter-spacing: $ls-tight;
+}
+
+h1 { font-size: $fs-4xl; }
+h2 { font-size: $fs-3xl; }
+h3 { font-size: $fs-2xl; }
+h4 { font-size: $fs-xl; }
+h5 { font-size: $fs-lg; }
+h6 { font-size: $fs-base; }
+
+// ── Section Heading (reusable utility class) ───────────────────
+.section-title {
+  font-family: $font-display;
+  font-size: $fs-xl;
+  font-weight: $fw-bold;
+  letter-spacing: $ls-tight;
+  color: $color-text-primary;
+}
+
+.section-sub {
+  font-size: $fs-sm;
+  color: $color-text-secondary;
+  margin-top: $s-1;
+}
+
+// ── Utility Text Classes ───────────────────────────────────────
+.text-primary   { color: $color-text-primary; }
+.text-secondary { color: $color-text-secondary; }
+.text-disabled  { color: $color-text-disabled; }
+.text-accent    { color: $color-accent; }
+.text-danger    { color: $color-danger; }
+.text-success   { color: $color-success; }
+.text-warning   { color: $color-warning; }
+
+.text-xs   { font-size: $fs-xs; }
+.text-sm   { font-size: $fs-sm; }
+.text-base { font-size: $fs-base; }
+.text-lg   { font-size: $fs-lg; }
+.text-xl   { font-size: $fs-xl; }
+.text-2xl  { font-size: $fs-2xl; }
+
+.font-mono    { font-family: $font-mono; }
+.font-display { font-family: $font-display; }
+
+.font-medium   { font-weight: $fw-medium; }
+.font-semibold { font-weight: $fw-semibold; }
+.font-bold     { font-weight: $fw-bold; }
+
+.truncate { @include truncate; }
+
+.gradient-text { @include gradient-text; }

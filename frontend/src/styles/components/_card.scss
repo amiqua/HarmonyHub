@@ -1,0 +1,180 @@
+// =============================================================
+// COMPONENTS — Card
+// General card + song card + playlist card
+// =============================================================
+@use "abstracts" as *;
+
+// ── Base card ─────────────────────────────────────────────────
+
+.card {
+  @include card-base;
+  @include card-hover;
+  padding: $s-4;
+  overflow: hidden;
+}
+
+// ── Song card (cover + info + actions) ────────────────────────
+
+.song-card {
+  @include card-base;
+  @include flex-start($s-3);
+  padding: $s-3 $s-4;
+  cursor: pointer;
+  transition: background $ease-fast;
+
+  &:hover { background: $color-bg-overlay; }
+  &:hover .song-card__actions { opacity: 1; }
+
+  &--active {
+    background: $color-accent-dim;
+    border-color: rgba($color-accent, 0.25);
+
+    .song-card__title { color: $color-accent; }
+  }
+}
+
+.song-card__cover {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: $r-md;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: $color-bg-overlay;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  &-placeholder {
+    width: 100%;
+    height: 100%;
+    @include flex-center;
+    font-size: $fs-lg;
+    font-weight: $fw-bold;
+    color: $color-accent;
+    background: $color-accent-dim;
+  }
+}
+
+.song-card__play-overlay {
+  position: absolute;
+  inset: 0;
+  @include flex-center;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity $ease-fast;
+  border-radius: inherit;
+
+  svg { width: 20px; height: 20px; color: $color-white; }
+}
+
+.song-card:hover .song-card__play-overlay { opacity: 1; }
+
+.song-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.song-card__title {
+  font-size: $fs-sm;
+  font-weight: $fw-semibold;
+  color: $color-text-primary;
+  @include truncate;
+}
+
+.song-card__meta {
+  font-size: $fs-xs;
+  color: $color-text-secondary;
+  margin-top: 2px;
+  @include truncate;
+}
+
+.song-card__duration {
+  font-size: $fs-xs;
+  font-family: $font-mono;
+  color: $color-text-secondary;
+  flex-shrink: 0;
+}
+
+.song-card__actions {
+  @include flex-start($s-1);
+  opacity: 0;
+  transition: opacity $ease-fast;
+  flex-shrink: 0;
+}
+
+// ── Playlist card ─────────────────────────────────────────────
+
+.playlist-card {
+  @include card-base;
+  @include card-hover;
+  cursor: pointer;
+  overflow: hidden;
+
+  &__cover {
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, $color-accent-dim, $color-purple-dim);
+    @include flex-center;
+    font-size: $fs-4xl;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &__body {
+    padding: $s-3;
+  }
+
+  &__name {
+    font-size: $fs-sm;
+    font-weight: $fw-semibold;
+    color: $color-text-primary;
+    @include truncate;
+  }
+
+  &__count {
+    font-size: $fs-xs;
+    color: $color-text-secondary;
+    margin-top: $s-1;
+  }
+}
+
+// ── Info card (stat box) ──────────────────────────────────────
+
+.stat-card {
+  @include card-base;
+  padding: $s-4;
+  @include flex-between;
+
+  &__label {
+    font-size: $fs-xs;
+    color: $color-text-secondary;
+    text-transform: uppercase;
+    letter-spacing: $ls-wide;
+    font-weight: $fw-semibold;
+  }
+
+  &__value {
+    font-family: $font-display;
+    font-size: $fs-2xl;
+    font-weight: $fw-bold;
+    color: $color-text-primary;
+    margin-top: $s-1;
+  }
+
+  &__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: $r-md;
+    @include flex-center;
+    background: $color-accent-dim;
+    color: $color-accent;
+  }
+}

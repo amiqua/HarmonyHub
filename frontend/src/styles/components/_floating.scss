@@ -1,0 +1,161 @@
+// =============================================================
+// COMPONENTS — Dropdown / Popover / Tooltip / Select
+// Floating layer UI components using Radix data attributes
+// =============================================================
+@use "abstracts" as *;
+
+// ── Shared floating surface ───────────────────────────────────
+
+%floating-surface {
+  background: $color-bg-elevated;
+  border: 1px solid $color-border-hover;
+  border-radius: $r-lg;
+  box-shadow: $shadow-lg;
+  z-index: $z-dropdown;
+  overflow: hidden;
+
+  @include motion-safe {
+    &[data-state="open"]   { animation: scale-in 160ms ease; }
+    &[data-state="closed"] { animation: scale-in 130ms ease reverse; }
+  }
+}
+
+// ── Dropdown menu ─────────────────────────────────────────────
+
+.dropdown-content {
+  @extend %floating-surface;
+  min-width: 200px;
+  max-width: 280px;
+  padding: $s-1;
+}
+
+.dropdown-label {
+  padding: $s-2 $s-3 $s-1;
+  font-size: $fs-xs;
+  font-weight: $fw-semibold;
+  letter-spacing: $ls-wide;
+  color: $color-text-secondary;
+  text-transform: uppercase;
+}
+
+.dropdown-item {
+  @include flex-start($s-2);
+  width: 100%;
+  padding: $s-2 $s-3;
+  border-radius: $r-sm;
+  font-size: $fs-sm;
+  color: $color-text-primary;
+  cursor: pointer;
+  transition: background $ease-fast;
+  border: none;
+  background: transparent;
+  text-align: left;
+
+  &:hover, &[data-highlighted] {
+    background: $color-bg-overlay;
+    outline: none;
+  }
+
+  &--danger {
+    color: $color-danger;
+
+    &:hover, &[data-highlighted] {
+      background: rgba($color-danger, 0.1);
+    }
+  }
+
+  svg { width: 14px; height: 14px; color: $color-text-secondary; flex-shrink: 0; }
+}
+
+.dropdown-separator {
+  height: 1px;
+  background: $color-border;
+  margin: $s-1 0;
+}
+
+// ── Popover ───────────────────────────────────────────────────
+
+.popover-content {
+  @extend %floating-surface;
+  padding: $s-3;
+  max-width: 360px;
+
+  &--wide { max-width: 560px; }
+}
+
+// ── Tooltip ───────────────────────────────────────────────────
+
+.tooltip-content {
+  background: $color-bg-overlay;
+  border: 1px solid $color-border-hover;
+  border-radius: $r-sm;
+  padding: $s-1 $s-2;
+  font-size: $fs-xs;
+  color: $color-text-primary;
+  box-shadow: $shadow-md;
+  max-width: 220px;
+  z-index: $z-toast;
+  pointer-events: none;
+
+  @include motion-safe {
+    animation: fade-in 120ms ease;
+  }
+}
+
+// ── Select ────────────────────────────────────────────────────
+
+.select-trigger {
+  @include flex-between;
+  gap: $s-2;
+  height: 40px;
+  padding: 0 $s-3;
+  border: 1px solid $color-border;
+  border-radius: $r-md;
+  background: $color-bg-input;
+  color: $color-text-primary;
+  font-size: $fs-sm;
+  cursor: pointer;
+  transition: border-color $ease-fast, background $ease-fast, box-shadow $ease-fast;
+  outline: none;
+
+  &:hover { border-color: $color-border-hover; background: $color-bg-overlay; }
+
+  &:focus, &[data-state="open"] {
+    border-color: $color-border-focus;
+    box-shadow: 0 0 0 3px $color-accent-dim;
+  }
+
+  &__icon { width: 14px; height: 14px; color: $color-text-secondary; flex-shrink: 0; }
+}
+
+.select-content {
+  @extend %floating-surface;
+  min-width: 160px;
+  padding: $s-1;
+}
+
+.select-item {
+  @extend .dropdown-item;
+
+  &[data-state="checked"] {
+    color: $color-accent;
+    background: $color-accent-dim;
+  }
+}
+
+.select-separator { @extend .dropdown-separator; }
+.select-label     { @extend .dropdown-label; }
+
+// ── Scroll area wrapper ───────────────────────────────────────
+
+.scroll-area {
+  position: relative;
+  overflow: hidden;
+
+  &__viewport {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    @include custom-scrollbar;
+  }
+}

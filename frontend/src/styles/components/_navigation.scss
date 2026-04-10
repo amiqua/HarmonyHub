@@ -1,0 +1,207 @@
+// =============================================================
+// COMPONENTS — Tabs / Accordion / Navigation Menu
+// =============================================================
+@use "abstracts" as *;
+
+// ── Tabs ──────────────────────────────────────────────────────
+
+.tabs {
+  @include flex-col($s-4);
+}
+
+.tabs__list {
+  @include flex-start($s-1);
+  border-bottom: 1px solid $color-border;
+  overflow-x: auto;
+  @include custom-scrollbar;
+  padding-bottom: 0;
+  flex-shrink: 0;
+}
+
+.tabs__trigger {
+  @include flex-center;
+  gap: $s-2;
+  height: 40px;
+  padding: 0 $s-4;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: $color-text-secondary;
+  font-size: $fs-sm;
+  font-weight: $fw-medium;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: $r-sm $r-sm 0 0;
+  margin-bottom: -1px;
+  transition: color $ease-fast, border-color $ease-fast;
+
+  &:hover { color: $color-text-primary; }
+
+  &[data-state="active"] {
+    color: $color-accent;
+    border-bottom-color: $color-accent;
+  }
+
+  @include focus-visible-ring;
+}
+
+.tabs__content {
+  @include motion-safe {
+    &[data-state="active"] { animation: fade-in 200ms ease; }
+  }
+}
+
+// ── Accordion ─────────────────────────────────────────────────
+
+.accordion {
+  @include flex-col($s-1);
+}
+
+.accordion__item {
+  border: 1px solid $color-border;
+  border-radius: $r-md;
+  overflow: hidden;
+  transition: border-color $ease-fast;
+
+  &[data-state="open"] { border-color: $color-border-hover; }
+}
+
+.accordion__trigger {
+  @include flex-between;
+  width: 100%;
+  padding: $s-3 $s-4;
+  background: transparent;
+  border: none;
+  color: $color-text-primary;
+  font-size: $fs-sm;
+  font-weight: $fw-semibold;
+  cursor: pointer;
+  text-align: left;
+  transition: background $ease-fast;
+
+  &:hover { background: $color-bg-overlay; }
+
+  @include focus-visible-ring;
+
+  &__chevron {
+    width: 16px;
+    height: 16px;
+    color: $color-text-secondary;
+    flex-shrink: 0;
+    transition: transform $ease-base;
+  }
+
+  &[data-state="open"] &__chevron { transform: rotate(180deg); }
+}
+
+.accordion__content {
+  padding: 0 $s-4 $s-4;
+  font-size: $fs-sm;
+  color: $color-text-secondary;
+  line-height: $lh-relaxed;
+
+  @include motion-safe {
+    &[data-state="open"] { animation: fade-in 180ms ease; }
+  }
+}
+
+// ── Page / Section Breadcrumb ─────────────────────────────────
+
+.breadcrumb {
+  @include flex-start($s-2);
+  flex-wrap: wrap;
+
+  &__item {
+    @include flex-start($s-2);
+    font-size: $fs-sm;
+    color: $color-text-secondary;
+  }
+
+  &__link {
+    cursor: pointer;
+    transition: color $ease-fast;
+
+    &:hover { color: $color-text-primary; }
+  }
+
+  &__current {
+    color: $color-text-primary;
+    font-weight: $fw-medium;
+  }
+
+  &__separator {
+    color: $color-text-disabled;
+    font-size: $fs-xs;
+  }
+}
+
+// ── Pagination ────────────────────────────────────────────────
+
+.pagination {
+  @include flex-start($s-1);
+  flex-wrap: wrap;
+}
+
+.pagination__btn {
+  @include flex-center;
+  width: 34px;
+  height: 34px;
+  border-radius: $r-md;
+  font-size: $fs-sm;
+  border: 1px solid $color-border;
+  background: transparent;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: background $ease-fast, color $ease-fast, border-color $ease-fast;
+
+  &:hover { background: $color-bg-overlay; color: $color-text-primary; border-color: $color-border-hover; }
+
+  &--active {
+    background: $color-accent-dim;
+    color: $color-accent;
+    border-color: rgba($color-accent, 0.3);
+    font-weight: $fw-semibold;
+  }
+
+  &--ellipsis { cursor: default; border-color: transparent; background: transparent; }
+}
+
+// ── Table ─────────────────────────────────────────────────────
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: $r-lg;
+  border: 1px solid $color-border;
+  @include custom-scrollbar;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $fs-sm;
+
+  th {
+    padding: $s-3 $s-4;
+    text-align: left;
+    font-size: $fs-xs;
+    font-weight: $fw-semibold;
+    letter-spacing: $ls-wide;
+    text-transform: uppercase;
+    color: $color-text-secondary;
+    border-bottom: 1px solid $color-border;
+    background: $color-bg-elevated;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: $s-3 $s-4;
+    color: $color-text-primary;
+    border-bottom: 1px solid $color-border;
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tr:hover td { background: $color-bg-highlight; }
+}

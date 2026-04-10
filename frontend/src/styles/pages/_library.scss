@@ -1,0 +1,75 @@
+// =============================================================
+// PAGES — Library & ZingChart
+// =============================================================
+@use "abstracts" as *;
+
+// ── Library ───────────────────────────────────────────────────
+
+.library-page {
+  @include flex-col($s-6);
+
+  &__header {
+    @include flex-start($s-4);
+    flex-wrap: wrap;
+    margin-bottom: $s-2;
+  }
+
+  &__title {
+    font-family: $font-display;
+    font-size: $fs-3xl;
+    font-weight: $fw-bold;
+  }
+}
+
+// ── ZingChart (Top 100) ───────────────────────────────────────
+
+.chart-page {
+  &__hero {
+    padding: $s-10 $s-6;
+    border-radius: $r-2xl;
+    background: linear-gradient(135deg, rgba($color-purple, 0.2), rgba($color-bg-base, 1));
+    margin-bottom: $s-8;
+    text-align: center;
+  }
+
+  &__title {
+    font-family: $font-display;
+    font-size: $fs-5xl;
+    font-weight: $fw-bold;
+    @include gradient-text;
+    margin-bottom: $s-2;
+  }
+
+  &__subtitle {
+    font-size: $fs-lg;
+    color: $color-text-secondary;
+  }
+}
+
+.chart-row {
+  @include flex-start($s-4);
+  padding: $s-3 $s-4;
+  border-radius: $r-md;
+  transition: background $ease-fast;
+  cursor: pointer;
+
+  &:hover { background: $color-bg-elevated; }
+
+  &__rank {
+    width: 40px;
+    font-family: $font-display;
+    font-size: $fs-2xl;
+    font-weight: $fw-bold;
+    color: $color-text-secondary;
+    text-align: center;
+
+    &--1 { color: #f59e0b; text-shadow: 0 0 12px rgba(#f59e0b, 0.4); }
+    &--2 { color: #10b981; }
+    &--3 { color: #ef4444; }
+  }
+
+  &__body {
+    flex: 1;
+    min-width: 0;
+  }
+}

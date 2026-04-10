@@ -1,0 +1,267 @@
+// =============================================================
+// COMPONENTS — Badge / Avatar / Separator / Skeleton /
+//              Progress / Slider / Switch / Checkbox
+// Small, self-contained UI atoms
+// =============================================================
+@use "abstracts" as *;
+
+// ── Badge ─────────────────────────────────────────────────────
+
+.badge {
+  @include flex-center;
+  display: inline-flex;
+  padding: 2px $s-2;
+  border-radius: $r-full;
+  font-size: $fs-xs;
+  font-weight: $fw-semibold;
+  letter-spacing: $ls-wide;
+  white-space: nowrap;
+  line-height: 1;
+
+  &--default {
+    background: $color-bg-overlay;
+    color: $color-text-secondary;
+    border: 1px solid $color-border;
+  }
+
+  &--accent {
+    background: $color-accent-dim;
+    color: $color-accent;
+  }
+
+  &--purple {
+    background: $color-purple-dim;
+    color: $color-purple;
+  }
+
+  &--danger {
+    background: rgba($color-danger, 0.15);
+    color: $color-danger;
+  }
+
+  &--success {
+    background: rgba($color-success, 0.15);
+    color: $color-success;
+  }
+
+  &--live {
+    background: rgba($color-danger, 0.15);
+    color: $color-danger;
+    animation: pulse-live 2s ease-in-out infinite;
+  }
+
+  &--gold {
+    background: rgba($color-gold, 0.15);
+    color: $color-gold;
+  }
+}
+
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+// ── Avatar ────────────────────────────────────────────────────
+
+.avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  border-radius: $r-full;
+  overflow: hidden;
+  background: $color-bg-overlay;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  // Sizes
+  &--xs  { width: 24px; height: 24px; font-size: $fs-xs; }
+  &--sm  { width: 32px; height: 32px; font-size: $fs-sm; }
+  &--md  { width: 40px; height: 40px; font-size: $fs-base; }
+  &--lg  { width: 52px; height: 52px; font-size: $fs-xl; }
+  &--xl  { width: 72px; height: 72px; font-size: $fs-2xl; }
+}
+
+.avatar__fallback {
+  width: 100%;
+  height: 100%;
+  @include flex-center;
+  font-family: $font-display;
+  font-weight: $fw-bold;
+  color: $color-accent;
+  background: $color-accent-dim;
+}
+
+// ── Separator ─────────────────────────────────────────────────
+
+.separator {
+  height: 1px;
+  background: $color-border;
+  border: none;
+  margin: 0;
+
+  &--vertical {
+    width: 1px;
+    height: auto;
+    align-self: stretch;
+  }
+}
+
+// ── Skeleton ──────────────────────────────────────────────────
+
+.skeleton {
+  border-radius: $r-md;
+  @include shimmer;
+
+  &--text  { height: $fs-sm; border-radius: $r-sm; }
+  &--title { height: $fs-xl; border-radius: $r-sm; width: 60%; }
+  &--circle { border-radius: $r-full; }
+  &--avatar-sm { width: 32px; height: 32px; border-radius: $r-full; }
+  &--avatar-md { width: 40px; height: 40px; border-radius: $r-full; }
+  &--cover     { aspect-ratio: 1; }
+}
+
+// ── Progress bar ──────────────────────────────────────────────
+
+.progress {
+  width: 100%;
+  height: 4px;
+  background: $color-bg-overlay;
+  border-radius: $r-full;
+  overflow: hidden;
+
+  &__bar {
+    height: 100%;
+    background: linear-gradient(90deg, $color-accent, $color-purple);
+    border-radius: $r-full;
+    transition: width 0.4s ease;
+  }
+
+  &--sm  { height: 2px; }
+  &--lg  { height: 8px; }
+}
+
+// ── Slider ────────────────────────────────────────────────────
+
+.slider {
+  position: relative;
+  width: 100%;
+  height: 20px;
+  @include flex-center;
+  cursor: pointer;
+
+  &__track {
+    width: 100%;
+    height: 4px;
+    background: $color-bg-overlay;
+    border-radius: $r-full;
+    position: relative;
+  }
+
+  &__range {
+    height: 100%;
+    background: $color-accent;
+    border-radius: $r-full;
+  }
+
+  &__thumb {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: $r-full;
+    background: $color-white;
+    border: 2px solid $color-accent;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    transition: transform $ease-fast, box-shadow $ease-fast;
+    cursor: grab;
+
+    &:hover, &:focus {
+      transform: translate(-50%, -50%) scale(1.25);
+      box-shadow: 0 0 0 4px $color-accent-dim;
+    }
+  }
+}
+
+// ── Switch ────────────────────────────────────────────────────
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: $s-2;
+  cursor: pointer;
+
+  &__track {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    background: $color-bg-overlay;
+    border-radius: $r-full;
+    border: 1px solid $color-border;
+    transition: background $ease-base, border-color $ease-base;
+    flex-shrink: 0;
+  }
+
+  &__thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: $color-text-secondary;
+    border-radius: $r-full;
+    transition: transform $ease-base, background $ease-base;
+    box-shadow: $shadow-xs;
+  }
+
+  &[data-state="checked"] {
+    .switch__track {
+      background: $color-accent-dim;
+      border-color: $color-accent;
+    }
+
+    .switch__thumb {
+      transform: translateX(18px);
+      background: $color-accent;
+    }
+  }
+
+  &[data-disabled] { opacity: 0.5; cursor: not-allowed; }
+}
+
+// ── Checkbox ──────────────────────────────────────────────────
+
+.checkbox {
+  @include flex-start($s-2);
+  cursor: pointer;
+
+  &__box {
+    width: 18px;
+    height: 18px;
+    border-radius: $r-sm;
+    border: 1px solid $color-border;
+    background: $color-bg-input;
+    @include flex-center;
+    flex-shrink: 0;
+    transition: background $ease-fast, border-color $ease-fast;
+
+    svg { width: 12px; height: 12px; color: $color-black; opacity: 0; }
+  }
+
+  &[data-state="checked"] .checkbox__box {
+    background: $color-accent;
+    border-color: $color-accent;
+
+    svg { opacity: 1; }
+  }
+
+  &[data-disabled] { opacity: 0.5; cursor: not-allowed; }
+
+  &__label {
+    font-size: $fs-sm;
+    color: $color-text-primary;
+  }
+}

@@ -1,0 +1,130 @@
+// =============================================================
+// COMPONENTS — Dialog / Sheet / Alert Dialog
+// Overlay-based modal patterns using Radix UI data attributes
+// =============================================================
+@use "abstracts" as *;
+
+// ── Overlay ───────────────────────────────────────────────────
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: calc(#{$z-dialog} - 1);
+
+  @include motion-safe {
+    &[data-state="open"]   { animation: fade-in 200ms ease; }
+    &[data-state="closed"] { animation: fade-in 200ms ease reverse; }
+  }
+}
+
+// ── Dialog content ────────────────────────────────────────────
+
+.dialog-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: $z-dialog;
+  width: 90vw;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: $color-bg-elevated;
+  border: 1px solid $color-border-hover;
+  border-radius: $r-xl;
+  box-shadow: $shadow-xl;
+  padding: $s-6;
+  @include custom-scrollbar;
+
+  @include motion-safe {
+    &[data-state="open"]   { animation: scale-in 220ms ease; }
+    &[data-state="closed"] { animation: scale-in 180ms ease reverse; }
+  }
+}
+
+.dialog-header {
+  @include flex-col($s-1);
+  margin-bottom: $s-5;
+}
+
+.dialog-title {
+  font-family: $font-display;
+  font-size: $fs-xl;
+  font-weight: $fw-bold;
+  color: $color-text-primary;
+  letter-spacing: $ls-tight;
+}
+
+.dialog-description {
+  font-size: $fs-sm;
+  color: $color-text-secondary;
+  line-height: $lh-relaxed;
+}
+
+.dialog-footer {
+  @include flex-start($s-3);
+  justify-content: flex-end;
+  margin-top: $s-6;
+  padding-top: $s-4;
+  border-top: 1px solid $color-border;
+}
+
+.dialog-close {
+  position: absolute;
+  top: $s-4;
+  right: $s-4;
+  @include flex-center;
+  width: 28px;
+  height: 28px;
+  border-radius: $r-full;
+  background: transparent;
+  border: none;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: color $ease-fast, background $ease-fast;
+
+  &:hover {
+    color: $color-text-primary;
+    background: $color-bg-overlay;
+  }
+
+  svg { width: 14px; height: 14px; }
+}
+
+// ── Sheet (slide from side) ───────────────────────────────────
+
+.sheet-overlay {
+  @extend .dialog-overlay;
+}
+
+.sheet-content {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  z-index: $z-dialog;
+  width: min(420px, 90vw);
+  background: $color-bg-elevated;
+  border-left: 1px solid $color-border-hover;
+  box-shadow: $shadow-xl;
+  padding: $s-6;
+  overflow-y: auto;
+  @include custom-scrollbar;
+  @include flex-col($s-5);
+
+  @include motion-safe {
+    &[data-state="open"]   { animation: slide-in-left 250ms ease reverse; }
+    &[data-state="closed"] { animation: slide-in-left 200ms ease; }
+  }
+}
+
+.sheet-header {
+  @extend .dialog-header;
+}
+
+.sheet-title {
+  @extend .dialog-title;
+}

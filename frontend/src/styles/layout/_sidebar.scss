@@ -1,0 +1,221 @@
+// =============================================================
+// LAYOUT — Sidebar
+// Left navigation panel
+// =============================================================
+@use "abstracts" as *;
+
+.sidebar {
+  @include flex-col;
+  height: 100%;
+  padding: $s-4;
+  overflow: hidden;
+}
+
+// ── Brand / Logo ───────────────────────────────────────────────
+
+.sidebar__brand {
+  @include flex-start($s-3);
+  padding: $s-1 0 $s-3;
+  margin-bottom: $s-1;
+  flex-shrink: 0;
+}
+
+.sidebar__logo {
+  width: 36px;
+  height: 36px;
+  border-radius: $r-md;
+  background: linear-gradient(135deg, $color-accent, $color-purple);
+  @include flex-center;
+  flex-shrink: 0;
+  box-shadow: $shadow-accent;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    color: $color-black;
+  }
+}
+
+.sidebar__brand-name {
+  font-family: $font-display;
+  font-size: $fs-lg;
+  font-weight: $fw-bold;
+  letter-spacing: $ls-tight;
+  color: $color-text-primary;
+  @include truncate;
+}
+
+// ── Divider ────────────────────────────────────────────────────
+
+.sidebar__divider {
+  height: 1px;
+  background: $color-border;
+  margin: $s-3 0;
+  flex-shrink: 0;
+}
+
+// ── Scroll area ────────────────────────────────────────────────
+
+.sidebar__scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  @include custom-scrollbar;
+  margin: 0 (-$s-4);
+  padding: 0 $s-4;
+}
+
+// ── Nav groups ─────────────────────────────────────────────────
+
+.sidebar__nav {
+  @include flex-col($s-1);
+  flex-shrink: 0;
+}
+
+.sidebar__nav-label {
+  font-size: $fs-xs;
+  font-weight: $fw-semibold;
+  letter-spacing: $ls-wider;
+  color: $color-text-disabled;
+  text-transform: uppercase;
+  padding: $s-3 $s-1 $s-1;
+  flex-shrink: 0;
+}
+
+// ── Nav items ─────────────────────────────────────────────────
+
+.sidebar__item {
+  @include flex-start($s-3);
+  width: 100%;
+  height: 40px;
+  padding: 0 $s-3;
+  border-radius: $r-md;
+  font-size: $fs-sm;
+  font-weight: $fw-medium;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: background $ease-fast, color $ease-fast;
+
+  @include focus-visible-ring;
+
+  &:hover {
+    background: $color-bg-overlay;
+    color: $color-text-primary;
+  }
+
+  &--active {
+    background: $color-accent-dim;
+    color: $color-accent;
+
+    .sidebar__item-icon { color: $color-accent; }
+  }
+}
+
+.sidebar__item-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: $color-text-secondary;
+  transition: color $ease-fast;
+}
+
+.sidebar__item-label {
+  flex: 1;
+  min-width: 0;
+  @include truncate;
+}
+
+.sidebar__item-badge {
+  font-size: $fs-xs;
+  padding: 2px $s-2;
+  border-radius: $r-full;
+  background: rgba($color-danger, 0.2);
+  color: $color-danger;
+  font-weight: $fw-semibold;
+  letter-spacing: $ls-wide;
+  flex-shrink: 0;
+}
+
+// ── Playlists section ──────────────────────────────────────────
+
+.sidebar__playlists {
+  margin-top: $s-2;
+  @include flex-col($s-1);
+}
+
+.sidebar__playlist-item {
+  @include flex-start($s-2);
+  width: 100%;
+  padding: $s-2 $s-3;
+  border-radius: $r-md;
+  font-size: $fs-sm;
+  color: $color-text-secondary;
+  cursor: pointer;
+  transition: background $ease-fast, color $ease-fast;
+
+  &:hover {
+    background: $color-bg-overlay;
+    color: $color-text-primary;
+  }
+
+  &--active {
+    color: $color-accent;
+  }
+}
+
+.sidebar__playlist-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: $r-full;
+  background: $color-text-disabled;
+  flex-shrink: 0;
+}
+
+.sidebar__playlist-name {
+  flex: 1;
+  min-width: 0;
+  @include truncate;
+}
+
+// ── Premium box ────────────────────────────────────────────────
+
+.sidebar__premium {
+  flex-shrink: 0;
+  margin-top: auto;
+  padding: $s-4;
+  border-radius: $r-xl;
+  border: 1px solid rgba($color-gold, 0.25);
+  background: linear-gradient(
+    135deg,
+    rgba($color-gold, 0.12) 0%,
+    rgba($color-purple, 0.12) 100%
+  );
+
+  &-title {
+    font-family: $font-display;
+    font-size: $fs-sm;
+    font-weight: $fw-semibold;
+    color: $color-text-primary;
+    line-height: $lh-snug;
+    margin-bottom: $s-3;
+  }
+
+  &-btn {
+    @include btn-base;
+    width: 100%;
+    justify-content: center;
+    height: 36px;
+    border-radius: $r-md;
+    background: $color-gold;
+    color: $color-black;
+    font-weight: $fw-bold;
+    font-size: $fs-xs;
+    letter-spacing: $ls-wide;
+    text-transform: uppercase;
+
+    &:hover {
+      background: tint($color-gold, 15%);
+      box-shadow: 0 0 16px rgba($color-gold, 0.35);
+    }
+  }
+}
