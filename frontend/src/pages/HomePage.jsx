@@ -6,7 +6,7 @@ import HomeNewReleasesGrid from "@/components/home/HomeNewReleasesGrid";
 
 export default function HomePage({ onLogin, onPlaySong, onGoZingChart }) {
   return (
-    <div className="space-y-6">
+    <div className="home-page">
       <HomeHeroCarousel onLoginClick={onLogin} />
 
       <HomeZingChartSection
@@ -15,7 +15,6 @@ export default function HomePage({ onLogin, onPlaySong, onGoZingChart }) {
         onMoreClick={() => onGoZingChart?.()}
       />
 
-      {/* Suggested playlists: gọi API backend (public) */}
       <HomeSuggestedPlaylists onPlay={(song) => onPlaySong?.(song)} />
 
       <HomeSuggestedSongsTable
