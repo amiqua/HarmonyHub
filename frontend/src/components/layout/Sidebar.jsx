@@ -13,6 +13,7 @@ import {
   Upload,
   Music2,
   LayoutGrid,
+  Crown,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -42,8 +43,10 @@ export default function Sidebar({
       { key: "radio", label: "Phòng Nhạc", icon: <Radio />, live: true, group: "main" },
       { key: "library", label: "Thư Viện", icon: <Library />, group: "main" },
       { key: "uploads", label: "Đã tải lên", icon: <Upload />, group: "main" },
-      { key: "new-chart", label: "BXH Nhạc Mới", icon: <Music2 />, group: "more" },
+      { key: "top100", label: "Top 100", icon: <Crown />, group: "more" },
       { key: "genres", label: "Chủ đề & Thể Loại", icon: <LayoutGrid />, group: "more" },
+      { key: "new-chart", label: "BXH Nhạc Mới", icon: <Music2 />, group: "more" },
+
     ],
     []
   );

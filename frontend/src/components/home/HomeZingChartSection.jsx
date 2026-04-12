@@ -223,17 +223,18 @@ export default function HomeZingChartSection({
                       {/* Rank */}
                       <div
                         className={cn(
-                          "w-7 text-2xl font-extrabold leading-none",
-                          rank === 1 && "text-red-300",
-                          rank === 2 && "text-green-300",
-                          rank === 3 && "text-blue-300"
+                          "w-10 text-3xl font-black italic tracking-tighter",
+                          rank === 1 && "text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.4)]",
+                          rank === 2 && "text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.4)]",
+                          rank === 3 && "text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.4)]"
                         )}
+                        style={{ WebkitTextStroke: "1px rgba(255,255,255,0.1)" }}
                       >
                         {rank}
                       </div>
 
                       {/* Cover */}
-                      <div className="h-10 w-10 overflow-hidden rounded-xl bg-muted/30">
+                      <div className="relative group/cover h-12 w-12 overflow-hidden rounded-xl bg-purple-900/30">
                         {song?.cover_url ||
                         song?.image_url ||
                         song?.thumbnail ? (
@@ -242,13 +243,16 @@ export default function HomeZingChartSection({
                               song.cover_url || song.image_url || song.thumbnail
                             }
                             alt={t}
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-cover transition-transform group-hover/cover:scale-110"
                             loading="lazy"
                           />
                         ) : (
-                          <div className="h-full w-full bg-gradient-to-br from-white/10 to-white/0" />
+                          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-purple-600/40 to-purple-900/40">
+                             <Music2 className="size-5 text-white/20" />
+                          </div>
                         )}
                       </div>
+
 
                       {/* Info */}
                       <div className="min-w-0 flex-1">

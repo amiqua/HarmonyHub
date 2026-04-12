@@ -5,12 +5,14 @@
 
 import LibraryPageContent from "@/components/library/LibraryPageContent";
 
-export default function LibraryPage({ onLogin, onPlaySong, onSelectPlaylist }) {
+export default function LibraryPage({ user, onLogin, onPlaySong, onSelectPlaylist }) {
   return (
     <LibraryPageContent
+      user={user}
       onLogin={onLogin}
       onPlaySong={onPlaySong}
       onSelectPlaylist={onSelectPlaylist}
     />
   );
 }
+

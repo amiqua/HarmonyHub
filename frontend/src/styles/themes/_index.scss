@@ -5,22 +5,64 @@
 @use "abstracts" as *;
 
 // By default, Nocturne is a dark theme, so :root is dark.
-// If you want to support light theme, you can redefine CSS custom properties here
-// and map SCSS variables to them, OR simply override properties under a selector.
+:root {
+  --bg-base: #0d0e14;
+  --bg-elevated: #161b27;
+  --bg-overlay: #1e2536;
+  --bg-input: #1a2033;
+  --bg-highlight: rgba(255, 255, 255, 0.04);
 
-// Example Light mode (if toggled via class "light"):
+  --accent: #1ce5a4;
+  --accent-hover: #0fc98e;
+  --accent-dim: rgba(28, 229, 164, 0.15);
+  --accent-glow: rgba(28, 229, 164, 0.25);
+
+  --purple: #8b5cf6;
+  --purple-hover: #7c3aed;
+  --purple-dim: rgba(139, 92, 246, 0.15);
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-disabled: #475569;
+  --text-inverse: #0f172a;
+  --text-accent: #1ce5a4;
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.15);
+  --border-focus: #1ce5a4;
+
+  --danger: #f87171;
+  --warning: #fbbf24;
+  --success: #34d399;
+  --info: #60a5fa;
+  --gold: #f59e0b;
+}
+
+// Light mode (toggled via class "light")
 .light {
-  $color-bg-base: $light-bg-base;
-  $color-bg-elevated: $light-bg-elevated;
-  $color-bg-overlay: $light-bg-overlay;
-  $color-bg-input: $light-bg-input;
-  $color-accent: $light-accent;
-  $color-text-primary: $light-text-primary;
-  $color-text-secondary: $light-text-secondary;
-  $color-border: $light-border;
+  --bg-base: #f1f5fb;
+  --bg-elevated: #ffffff;
+  --bg-overlay: #e8edf6;
+  --bg-input: #f8fafc;
+  --bg-highlight: rgba(0, 0, 0, 0.04);
 
-  // We would realistically use CSS variables e.g. var(--bg-base)
-  // for a true dynamic theme toggle.
-  // For this pure SCSS migration with static vars, we'd need to re-declare backgrounds.
-  // Since you mentioned "Nocturne" (Dark), we'll focus mostly on dark mode being the anchor.
+  --accent: #0b8c64;
+  --accent-hover: #077a55;
+  --accent-dim: rgba(11, 140, 100, 0.12);
+  --accent-glow: rgba(11, 140, 100, 0.2);
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-disabled: #94a3b8;
+  --text-inverse: #ffffff;
+  --text-accent: #0b8c64;
+
+  --border: rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(0, 0, 0, 0.14);
+  --border-focus: #0b8c64;
+
+  // We keep semantic colors generally the same or slightly adjusted for light background
+  --danger: #ef4444;
+  --warning: #d97706;
+  --success: #059669;
 }

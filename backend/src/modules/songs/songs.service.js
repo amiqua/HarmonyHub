@@ -80,7 +80,9 @@ export async function list(query) {
     genreId: query.genreId ? Number(query.genreId) : undefined,
     artistId: query.artistId ? Number(query.artistId) : undefined,
     albumId: query.albumId ? Number(query.albumId) : undefined,
+    userId: query.userId,
     sort: query.sort,
+
   };
 
   const { rows, total } = await songsRepo.list({ limit, offset, ...filters });
@@ -108,10 +110,23 @@ export async function getById(id) {
 /**
  * Create (Protected)
  * - Ưu tiên lấy audio_url + audio_public_id từ file upload
+ * - Validate audio metadata từ req.audioMetadata
+ * - Check duplicate audio bằng hash từ req.audioHash
  * - Nếu không upload file, có thể nhận audio_url/audio_public_id từ body (tuỳ bạn)
  */
-export async function create(userPayload, body, files) {
+export async function create(userPayload, body, files, audioMetadata, audioHash) {
   const userId = requireUser(userPayload);
+
+  // Check for duplicate audio
+  if (audioHash) {
+    const existingDuplicate = await songsRepo.findByAudioHash(audioHash);
+    if (existingDuplicate) {
+      throw new ApiError(
+        409,
+        "Bài hát này đã tồn tại trong thư viện. Bạn không thể upload bài hát trùng lặp."
+      );
+    }
+  }
 
   const fromAudio = pickAudioFromFile(files?.audioFile);
   const fromCover = pickCoverFromFile(files?.imageFile);
@@ -119,15 +134,26 @@ export async function create(userPayload, body, files) {
   const data = {
     user_id: userId,
     title: body.title,
-    duration: normalizeNumber(body.duration, "duration"),
+    duration: audioMetadata?.duration || normalizeNumber(body.duration, "duration"),
     release_date: body.release_date,
     audio_url: fromAudio.audio_url ?? body.audio_url,
     audio_public_id: fromAudio.audio_public_id ?? body.audio_public_id,
+    audio_hash: audioHash,
     cover_url: fromCover.cover_url ?? body.cover_url,
     cover_public_id: fromCover.cover_public_id ?? body.cover_public_id,
+    ...(audioMetadata ? {
+      bit_rate: audioMetadata.bitrate,
+      codec: audioMetadata.codec,
+    } : {}),
   };
 
   const created = await songsRepo.create(data);
+
+  // Update metadata if extracted
+  if (audioMetadata) {
+    await songsRepo.updateAudioMetadata(created.id, audioMetadata);
+  }
+
   return created;
 }
 

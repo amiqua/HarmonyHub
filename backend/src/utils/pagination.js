@@ -2,6 +2,7 @@
  * Công dụng: Hỗ trợ phân trang (page/limit) từ query string.
  * - parsePagination(req.query): trả về { page, limit, offset }
  * - buildMeta(page, limit, total): trả về { page, limit, total, totalPages }
+ * - Validation: limit max 100, min 1, page min 1
  *
  * Ví dụ:
  *   const { page, limit, offset } = parsePagination(req.query);
@@ -9,18 +10,24 @@
  *   return ok(res, rows, buildMeta(page, limit, total));
  */
 
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 100;
+const MIN_LIMIT = 1;
+
 export function parsePagination(query = {}) {
   const pageRaw = query.page;
   const limitRaw = query.limit;
 
-  let page = Number(pageRaw ?? 1);
-  let limit = Number(limitRaw ?? 20);
+  let page = Number(pageRaw ?? DEFAULT_PAGE);
+  let limit = Number(limitRaw ?? DEFAULT_LIMIT);
 
-  if (!Number.isFinite(page) || page < 1) page = 1;
-  if (!Number.isFinite(limit) || limit < 1) limit = 20;
+  // Validation with bounds
+  if (!Number.isFinite(page) || page < 1) page = DEFAULT_PAGE;
+  if (!Number.isFinite(limit) || limit < MIN_LIMIT) limit = DEFAULT_LIMIT;
 
-  // Giới hạn để tránh client spam lấy quá nhiều
-  if (limit > 100) limit = 100;
+  // Enforce max limit to prevent DoS
+  if (limit > MAX_LIMIT) limit = MAX_LIMIT;
 
   const offset = (page - 1) * limit;
 

@@ -1,7 +1,9 @@
 // FILE: src/components/library/LibraryPageContent.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+
 import { toast } from "sonner";
-import { Plus, RefreshCcw, LogIn } from "lucide-react";
+import { Plus, RefreshCcw, LogIn, Upload } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 
 import { http } from "@/lib/http";
@@ -40,6 +42,7 @@ const TABS = [
  * - onLogin?() // mở login dialog
  */
 export default function LibraryPageContent({
+  user,
   onPlaySong,
   onSelectSong,
   onSelectPlaylist,
@@ -55,10 +58,9 @@ export default function LibraryPageContent({
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const [likedSongs, setLikedSongs] = useState([]);
-  const [playlists, setPlaylists] = useState([]);
-  const [historySongs, setHistorySongs] = useState([]);
-  const [uploadedSongs, setUploadedSongs] = useState([]);
+
+
+
 
   const errorToastedRef = useRef(false);
 
@@ -244,64 +246,55 @@ export default function LibraryPageContent({
     throw lastErr;
   };
 
-  const fetchTabData = async ({ silent = false } = {}) => {
-    try {
-      if (!silent) setLoading(true);
-      setRefreshing(true);
+  // ✅ react-query integration for all tabs
+  const { 
+    data: activeData, 
+    isLoading: activeLoading, 
+    isFetching: activeFetching,
+    refetch,
+  } = useQuery({
+    queryKey: [tab, "me", user?.id],
+    queryFn: async () => {
+      if (!hasToken) return [];
+      
+      let endpoint = "/";
+      const params = { page: 1, limit: 100 };
 
-      // tab nào cũng cần auth trong UI của bạn
-      if (!hasToken) {
-        errorToastedRef.current = false;
-        if (!silent) toast.message("Đăng nhập để xem Thư viện.");
-        setLikedSongs([]);
-        setPlaylists([]);
-        setHistorySongs([]);
-        setUploadedSongs([]);
-        return;
+      if (tab === "liked") endpoint = "/favorites/me";
+      if (tab === "history") endpoint = "/history/me";
+      if (tab === "playlists") endpoint = "/playlists/me";
+      if (tab === "uploads") {
+        endpoint = "/songs";
+        if (user?.id) params.userId = user.id;
+        else return []; // Không có user_id thì không filter được bài của mình
       }
 
-      const params = { page: 1, limit: 50 };
-
-      const res = await requestFirstWorkingEndpoint(tab, params);
+      const url = safePath(endpoint);
+      const res = await http.get(url, { params });
+      
       const payload = res?.data;
-
-      // backend chuẩn dự án bạn: { success, data, meta? }
       const raw = payload?.data;
       const finalList = normalizeRows(raw);
 
-      if (tab === "liked") setLikedSongs(finalList.map(normalizeSong));
-      if (tab === "history") setHistorySongs(finalList.map(normalizeSong));
-      if (tab === "uploads") setUploadedSongs(finalList.map(normalizeSong));
-      if (tab === "playlists") setPlaylists(finalList.map(normalizePlaylist));
+      if (tab === "playlists") return finalList.map(normalizePlaylist);
+      return finalList.map(normalizeSong);
+    },
+    enabled: hasToken,
+    staleTime: 10000, 
+  });
 
-      errorToastedRef.current = false;
-    } catch (err) {
-      console.error("[LibraryPageContent] Fetch failed:", {
-        tab,
-        message: err?.message,
-        status: err?.response?.status,
-        data: err?.response?.data,
-        baseURL: http?.defaults?.baseURL,
-        triedResolved: resolvedEndpointRef.current?.[tab] ?? null,
-      });
 
-      const status = err?.response?.status;
+  // Sync loading/refreshing states if needed for specific UI components
+  useEffect(() => {
+    setLoading(activeLoading);
+    setRefreshing(activeFetching);
+  }, [activeLoading, activeFetching]);
 
-      if (status === 401 || status === 403) {
-        toast.error("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
-        onLogin?.();
-        return;
-      }
-
-      if (!errorToastedRef.current) {
-        errorToastedRef.current = true;
-        toast.error("Tải dữ liệu thư viện thất bại. Vui lòng thử lại.");
-      }
-    } finally {
-      setRefreshing(false);
-      setLoading(false);
-    }
+  const fetchTabData = async ({ silent = false } = {}) => {
+    // Legacy support or manual trigger
+    refetch();
   };
+
 
   // sync tab <-> query param
   useEffect(() => {
@@ -407,13 +400,8 @@ export default function LibraryPageContent({
     }
   };
 
-  const currentList = useMemo(() => {
-    if (tab === "liked") return likedSongs;
-    if (tab === "history") return historySongs;
-    if (tab === "uploads") return uploadedSongs;
-    if (tab === "playlists") return playlists;
-    return [];
-  }, [tab, likedSongs, historySongs, uploadedSongs, playlists]);
+  const currentList = activeData ?? [];
+
 
   const renderEmpty = () => {
     if (!hasToken) {
@@ -448,10 +436,20 @@ export default function LibraryPageContent({
               <Plus className="h-4 w-4" />
               Tạo playlist
             </Button>
+            
+            <Button
+              variant="secondary"
+              className="gap-2 rounded-full"
+              onClick={() => window.dispatchEvent(new CustomEvent("app:navigate", { detail: "uploads" }))}
+            >
+              <Upload className="h-4 w-4" />
+              Tải lên bài hát
+            </Button>
           </div>
         </div>
       );
     }
+
 
     return (
       <div className="rounded-2xl border border-border/60 bg-card/30 p-8 text-sm text-muted-foreground">
@@ -584,6 +582,27 @@ export default function LibraryPageContent({
             </Button>
           ) : null}
 
+          {/* ✅ Nút Upload mới để người dùng dễ thấy */}
+          <Button
+            type="button"
+            variant="ghost"
+            className="rounded-full gap-2 border border-border/40"
+            onClick={() => {
+              if (!hasToken) {
+                toast.error("Bạn cần đăng nhập để upload nhạc.");
+                onLogin?.();
+                return;
+              }
+              // Điều hướng tới trang upload hoặc mở dialog
+              // AppRouter dùng key "uploads" để tới /uploads
+              window.dispatchEvent(new CustomEvent("app:navigate", { detail: "uploads" }));
+            }}
+            title="Tải lên bài hát mới"
+          >
+            <Upload className="h-4 w-4" />
+            <span className="hidden sm:inline">Tải lên</span>
+          </Button>
+
           <Button
             type="button"
             variant="ghost"
@@ -598,6 +617,7 @@ export default function LibraryPageContent({
             />
           </Button>
         </div>
+
       </div>
 
       {/* Content */}

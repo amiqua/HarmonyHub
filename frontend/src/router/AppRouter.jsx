@@ -7,7 +7,11 @@ import LibraryPage from "@/pages/LibraryPage";
 import NewReleasesPage from "@/pages/NewReleasesPage";
 import GenresPage from "@/pages/GenresPage";
 
+import { useAuthStore } from "@/store/authStore";
+
 export default function AppRouter({ onLogin, onPlaySong, onNavigate }) {
+  const { user } = useAuthStore();
+
   return (
     <Routes>
       <Route
@@ -24,11 +28,13 @@ export default function AppRouter({ onLogin, onPlaySong, onNavigate }) {
         path="/uploads"
         element={
           <UploadsPage
+            user={user}
             onRequireLogin={onLogin}
             onPlaySong={onPlaySong}
           />
         }
       />
+
       <Route
         path="/zingchart"
         element={
@@ -42,12 +48,14 @@ export default function AppRouter({ onLogin, onPlaySong, onNavigate }) {
         path="/library"
         element={
           <LibraryPage
+            user={user}
             onLogin={onLogin}
             onPlaySong={onPlaySong}
             onSelectPlaylist={(pl) => console.log("[Router] Select playlist:", pl)}
           />
         }
       />
+
       <Route
         path="/new-releases"
         element={

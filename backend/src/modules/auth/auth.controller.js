@@ -30,3 +30,8 @@ export async function me(req, res) {
   const result = await authService.getMe(req.user);
   return ok(res, result);
 }
+
+export async function logout(req, res) {
+  const result = await authService.logout(req.user, req.token);
+  return ok(res, result);
+}

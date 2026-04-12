@@ -61,8 +61,16 @@ export default function LoginDialog({ open, onOpenChange, onSuccess }) {
       const accessToken = data?.tokens?.accessToken ?? null;
       const refreshToken = data?.tokens?.refreshToken ?? null;
 
+      console.log("[LoginDialog] Login successful, tokens received:", {
+        hasUser: !!user,
+        hasAccessToken: !!accessToken,
+        hasRefreshToken: !!refreshToken,
+        accessTokenLength: accessToken?.length || 0,
+      });
+
       if (!accessToken) {
         toast.error("Đăng nhập thất bại: Không nhận được accessToken.");
+        console.error("[LoginDialog] No accessToken in response:", data);
         return;
       }
 
@@ -72,6 +80,11 @@ export default function LoginDialog({ open, onOpenChange, onSuccess }) {
 
       // (tuỳ chọn) lưu user
       if (user) localStorage.setItem("user", JSON.stringify(user));
+
+      console.log("[LoginDialog] Tokens stored in localStorage:", {
+        accessToken: "stored",
+        refreshToken: refreshToken ? "stored" : "not_received",
+      });
 
       toast.success("Đăng nhập thành công!");
       try {

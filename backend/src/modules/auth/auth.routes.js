@@ -10,7 +10,11 @@ import { validate } from "../../middlewares/validate.js";
 import { auth } from "../../middlewares/auth.js";
 
 import * as authController from "./auth.controller.js";
-import { loginSchema, refreshSchema, registerSchema } from "./auth.validation.js";
+import {
+  loginSchema,
+  refreshSchema,
+  registerSchema,
+} from "./auth.validation.js";
 
 const router = Router();
 
@@ -18,7 +22,11 @@ const router = Router();
  * Đăng ký tài khoản
  * POST /api/v1/auth/register
  */
-router.post("/register", validate({ body: registerSchema }), authController.register);
+router.post(
+  "/register",
+  validate({ body: registerSchema }),
+  authController.register,
+);
 
 /**
  * Đăng nhập
@@ -27,15 +35,25 @@ router.post("/register", validate({ body: registerSchema }), authController.regi
 router.post("/login", validate({ body: loginSchema }), authController.login);
 
 /**
- * Refresh access token (tuỳ chọn dùng, nếu bạn triển khai refresh token)
+ * Refresh access token
  * POST /api/v1/auth/refresh
  */
-router.post("/refresh", validate({ body: refreshSchema }), authController.refresh);
+router.post(
+  "/refresh",
+  validate({ body: refreshSchema }),
+  authController.refresh,
+);
 
 /**
- * Lấy thông tin user hiện tại theo access token
+ * Lấy thông tin user hiện tại
  * GET /api/v1/auth/me
  */
 router.get("/me", auth(), authController.me);
+
+/**
+ * Đăng xuất
+ * POST /api/v1/auth/logout
+ */
+router.post("/logout", auth(), authController.logout);
 
 export default router;

@@ -100,16 +100,21 @@ export async function register({ username, email, password }) {
       role: ROLES.USER,
     };
 
-    const accessToken = signAccessToken(payload);
-    const tokens = { accessToken };
+  const accessToken = signAccessToken(payload);
+  const tokens = { accessToken };
 
-    // Nếu bạn cấu hình refresh secret thì trả thêm refreshToken
-    if (canUseRefreshToken()) {
-      tokens.refreshToken = signRefreshToken(payload);
-    }
+  // Nếu bạn cấu hình refresh secret thì trả thêm refreshToken
+  if (canUseRefreshToken()) {
+    tokens.refreshToken = signRefreshToken(payload);
+  }
 
-    await db.query("COMMIT");
-    return { user: safeUser(user), tokens };
+  console.log("[auth-service] Tokens created after registration:", {
+    hasAccessToken: !!accessToken,
+    hasRefreshToken: !!tokens.refreshToken,
+  });
+
+  await db.query("COMMIT");
+  return { user: safeUser(user), tokens };
   } catch (err) {
     await db.query("ROLLBACK");
 
@@ -162,6 +167,12 @@ export async function login({ email, password }) {
   if (canUseRefreshToken()) {
     tokens.refreshToken = signRefreshToken(payload);
   }
+
+  console.log("[auth-service] Tokens created after login:", {
+    userId: user.id,
+    hasAccessToken: !!accessToken,
+    hasRefreshToken: !!tokens.refreshToken,
+  });
 
   return { user: safeUser(user), tokens };
 }
@@ -233,4 +244,20 @@ export async function getMe(userPayload) {
   if (!user) throw new ApiError(404, "Không tìm thấy user.");
 
   return { user: safeUser(user) };
+}
+
+/**
+ * Đăng xuất:
+ * - Thu hồi access token (add vào blacklist)
+ * - Clear refresh token nếu có
+ */
+export async function logout(userPayload, accessToken) {
+  const { userId, exp } = userPayload;
+  if (!userId) throw new ApiError(401, "Token không hợp lệ.");
+
+  // Add token to blacklist
+  const { addToBlacklist } = await import("./tokenBlacklist.service.js");
+  await addToBlacklist(accessToken, userId, exp);
+
+  return { message: "Đã đăng xuất thành công" };
 }

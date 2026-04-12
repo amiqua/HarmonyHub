@@ -39,15 +39,17 @@
 }
 
 /// Lighten color by mixing with white
-/// @param {Color} $color
-/// @param {Number} $amount - percentage 0-100
 @function tint($color, $amount) {
+  @if type-of($color) != "color" {
+    @return $color;
+  }
   @return color.mix(white, $color, $amount);
 }
 
 /// Darken color by mixing with black
-/// @param {Color} $color
-/// @param {Number} $amount - percentage 0-100
 @function shade($color, $amount) {
+  @if type-of($color) != "color" {
+    @return $color;
+  }
   @return color.mix(black, $color, $amount);
 }

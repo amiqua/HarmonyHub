@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useEffect, useRef } from "react";
+import { usePlayerStore } from "@/store/playerStore";
 import { Play, Pause, SkipBack, SkipForward, Volume2, Shuffle, Repeat } from "lucide-react";
 
-export default function GlobalAudioPlayer({ song, autoPlay = true }) {
+export default function GlobalAudioPlayer({ autoPlay = true }) {
+  const { nowPlaying, isPlaying, setIsPlaying } = usePlayerStore();
   const audioRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(false);
 
+  const song = nowPlaying;
   const coverUrl =
     song?.cover_url ?? song?.image_url ?? song?.thumbnail ?? song?.coverUrl ?? "";
 
@@ -22,7 +23,18 @@ export default function GlobalAudioPlayer({ song, autoPlay = true }) {
       .catch((err) => {
         console.error("[GlobalAudioPlayer] play() failed:", err);
       });
-  }, [song?.audio_url, autoPlay]);
+  }, [song?.audio_url, autoPlay, setIsPlaying]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (isPlaying) {
+      audio.play().catch(() => {});
+    } else {
+      audio.pause();
+    }
+  }, [isPlaying]);
 
   return (
     <div className="player">
@@ -31,7 +43,7 @@ export default function GlobalAudioPlayer({ song, autoPlay = true }) {
           <img src={coverUrl} alt={song?.title || "cover"} />
         ) : (
           <div className="player__cover-placeholder">
-            {String(song?.title || "?").trim().slice(0, 1).toUpperCase()}
+            {song ? String(song?.title || "?").trim().slice(0, 1).toUpperCase() : "?"}
           </div>
         )}
       </div>
@@ -40,7 +52,7 @@ export default function GlobalAudioPlayer({ song, autoPlay = true }) {
         {song ? (
           <>
             <div className="player__title">{song.title}</div>
-            <div className="player__artist">{song.artist || "Unknown Artist"}</div>
+            <div className="player__artist">{song.artist || song.artistsText || "Unknown Artist"}</div>
           </>
         ) : (
           <div className="player__empty">Chưa phát bài nào</div>
@@ -59,3 +71,4 @@ export default function GlobalAudioPlayer({ song, autoPlay = true }) {
     </div>
   );
 }
+

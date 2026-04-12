@@ -7,6 +7,7 @@
  * - Truyền userPayload (req.user) xuống service cho các thao tác protected.
  * - Truyền req.files (nếu upload multipart) xuống service để lấy audio_url + audio_public_id
  *   và cover_url + cover_public_id.
+ * - Truyền req.audioMetadata và req.audioHash từ uploadSongMediaFields middleware
  */
 
 import { created, ok } from "../../utils/response.js";
@@ -25,14 +26,19 @@ export async function getById(req, res) {
 export async function create(req, res) {
   // req.user: từ auth()
   // req.files: từ uploadSongMediaFields (nếu multipart/form-data)
+  // req.audioMetadata: duration, bitrate, codec từ uploadSongMediaFields
+  // req.audioHash: SHA256 hash từ uploadSongMediaFields
   const files = req.files || {};
   const audioFile = Array.isArray(files.audio) ? files.audio[0] : undefined;
   const imageFile = Array.isArray(files.image) ? files.image[0] : undefined;
 
-  const result = await songsService.create(req.user, req.body, {
-    audioFile,
-    imageFile,
-  });
+  const result = await songsService.create(
+    req.user,
+    req.body,
+    { audioFile, imageFile },
+    req.audioMetadata,
+    req.audioHash
+  );
   return created(res, result);
 }
 

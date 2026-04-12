@@ -12,9 +12,7 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        // Use modern Dart Sass API (no deprecation warnings)
         api: "modern-compiler",
-        // Allow @use 'abstracts' without relative path in every file
         loadPaths: ["src/styles"],
       },
     },
@@ -24,6 +22,18 @@ export default defineConfig({
       "/api": {
         target: "http://localhost:3000",
         changeOrigin: true,
+      },
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          ui: ["@radix-ui/react-accordion", "@radix-ui/react-dialog"],
+          query: ["@tanstack/react-query", "@tanstack/react-table"],
+          zustand: ["zustand"],
+        },
       },
     },
   },

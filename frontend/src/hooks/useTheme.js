@@ -4,8 +4,13 @@ const STORAGE_KEY = "theme"; // "light" | "dark"
 
 function applyTheme(theme) {
   const root = document.documentElement; // <html>
-  if (theme === "dark") root.classList.add("dark");
-  else root.classList.remove("dark");
+  if (theme === "light") {
+    root.classList.add("light");
+    root.classList.remove("dark");
+  } else {
+    root.classList.add("dark");
+    root.classList.remove("light");
+  }
 }
 
 export default function useTheme() {

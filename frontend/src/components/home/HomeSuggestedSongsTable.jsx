@@ -78,7 +78,21 @@ export default function HomeSuggestedSongsTable({
       song?.view_count ??
       null;
 
-    return { title, artistsText, albumText, duration, coverUrl, plays };
+    const audio_url =
+      song?.audio_url ?? song?.file_url ?? song?.url ?? song?.song_url ?? "";
+
+    return { 
+      ...song, 
+      id: song?.id || song?._id,
+      title, 
+      artistsText, 
+      albumText, 
+      duration, 
+      coverUrl, 
+      plays,
+      audio_url
+    };
+
   };
 
   const fetchLatest10 = async ({ silent = false } = {}) => {

@@ -27,24 +27,70 @@ function ensureRefreshJwtConfigured() {
 
 export function signAccessToken(payload) {
   ensureAccessJwtConfigured();
-  return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
-    expiresIn: env.JWT_ACCESS_EXPIRES_IN || "1d",
+  const token = jwt.sign(payload, env.JWT_ACCESS_SECRET, {
+    expiresIn: env.JWT_ACCESS_EXPIRES_IN,
   });
+  console.log("[jwt] Access token signed successfully:", {
+    userId: payload.userId,
+    expiresIn: env.JWT_ACCESS_EXPIRES_IN,
+    tokenLength: token.length,
+    secretConfigured: !!env.JWT_ACCESS_SECRET,
+  });
+  return token;
 }
 
 export function signRefreshToken(payload) {
   ensureRefreshJwtConfigured();
-  return jwt.sign(payload, env.JWT_REFRESH_SECRET, {
-    expiresIn: env.JWT_REFRESH_EXPIRES_IN || "7d",
+  const token = jwt.sign(payload, env.JWT_REFRESH_SECRET, {
+    expiresIn: env.JWT_REFRESH_EXPIRES_IN,
   });
+  console.log("[jwt] Refresh token signed successfully:", {
+    userId: payload.userId,
+    expiresIn: env.JWT_REFRESH_EXPIRES_IN,
+    secretConfigured: !!env.JWT_REFRESH_SECRET,
+  });
+  return token;
 }
 
 export function verifyAccessToken(token) {
   ensureAccessJwtConfigured();
-  return jwt.verify(token, env.JWT_ACCESS_SECRET);
+  try {
+    const payload = jwt.verify(token, env.JWT_ACCESS_SECRET);
+    console.log("[jwt] Access token verified successfully:", {
+      userId: payload.userId,
+      email: payload.email,
+      expiresAt: new Date(payload.exp * 1000).toISOString(),
+    });
+    return payload;
+  } catch (err) {
+    console.error("[jwt] Access token verification FAILED:", {
+      errorName: err.name,
+      errorMessage: err.message,
+      tokenLength: token?.length || 0,
+      secretConfigured: !!env.JWT_ACCESS_SECRET,
+      secretLength: env.JWT_ACCESS_SECRET?.length || 0,
+    });
+    throw err;
+  }
 }
 
 export function verifyRefreshToken(token) {
   ensureRefreshJwtConfigured();
-  return jwt.verify(token, env.JWT_REFRESH_SECRET);
+  try {
+    const payload = jwt.verify(token, env.JWT_REFRESH_SECRET);
+    console.log("[jwt] Refresh token verified successfully:", {
+      userId: payload.userId,
+      expiresAt: new Date(payload.exp * 1000).toISOString(),
+    });
+    return payload;
+  } catch (err) {
+    console.error("[jwt] Refresh token verification FAILED:", {
+      errorName: err.name,
+      errorMessage: err.message,
+      tokenLength: token?.length || 0,
+      secretConfigured: !!env.JWT_REFRESH_SECRET,
+      secretLength: env.JWT_REFRESH_SECRET?.length || 0,
+    });
+    throw err;
+  }
 }

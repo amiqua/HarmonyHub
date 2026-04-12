@@ -92,7 +92,17 @@ function AppInner() {
     toast.success("Đã đăng xuất.");
   };
 
+  useEffect(() => {
+    const onAppNav = (e) => {
+      const key = e.detail;
+      handleNavigate(key);
+    };
+    window.addEventListener("app:navigate", onAppNav);
+    return () => window.removeEventListener("app:navigate", onAppNav);
+  }, [handleNavigate]);
+
   return (
+
     <AppShell
       sidebar={
         <Sidebar
@@ -111,7 +121,7 @@ function AppInner() {
           onUpgradeClick={() => console.log("[App] Upgrade")}
           onDownloadClick={() => console.log("[App] Download")}
           onSettingsClick={() => console.log("[App] Settings")}
-          onSelectSong={(song) => console.log("[App] Selected song:", song)}
+          onSelectSong={handlePlaySong}
         />
       }
     >

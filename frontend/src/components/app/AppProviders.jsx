@@ -9,6 +9,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 
+import { TooltipProvider } from "@/components/ui/tooltip";
+
 /**
  * QueryClient nên tạo ở scope module để tránh bị tạo lại nhiều lần.
  * (React StrictMode dev có thể render 2 lần)
@@ -25,10 +27,13 @@ const queryClient = new QueryClient({
 export default function AppProviders({ children }) {
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <TooltipProvider>
+        {children}
+      </TooltipProvider>
 
       {/* Sonner: dùng chung cho toàn app (chỉ 1 lần) */}
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
 }
+

@@ -33,6 +33,7 @@ export async function list({
   genreId,
   artistId,
   albumId,
+  userId,
   sort,
 }) {
   const where = [];
@@ -40,12 +41,27 @@ export async function list({
   let idx = 1;
 
   if (q) {
-    where.push(`LOWER(s.title) LIKE LOWER($${idx})`);
+    where.push(`(
+      LOWER(s.title) LIKE LOWER($${idx})
+      OR EXISTS (
+        SELECT 1 FROM song_artists sa
+        JOIN artists a ON a.id = sa.artist_id
+        WHERE sa.song_id = s.id AND LOWER(a.name) LIKE LOWER($${idx})
+      )
+    )`);
     params.push(`%${q}%`);
     idx++;
   }
 
+
+  if (userId) {
+    where.push(`s.user_id = $${idx}`);
+    params.push(userId);
+    idx++;
+  }
+
   if (genreId) {
+
     where.push(`
       EXISTS (
         SELECT 1 FROM song_genres sg
@@ -362,3 +378,42 @@ export async function getAlbumById(id) {
   );
   return res.rows[0] || null;
 }
+
+export async function findByAudioHash(audioHash) {
+  const res = await db.query(
+    `SELECT id FROM songs WHERE audio_hash = $1 LIMIT 1;`,
+    [audioHash]
+  );
+  return res.rows[0] || null;
+}
+
+export async function updateAudioMetadata(id, { duration, bit_rate, codec }) {
+  const res = await db.query(
+    `
+    UPDATE songs
+    SET
+      duration = COALESCE($1, duration),
+      bit_rate = COALESCE($2, bit_rate),
+      codec = COALESCE($3, codec),
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = $4
+    RETURNING id, title, duration, bit_rate, codec;
+    `,
+    [duration ?? null, bit_rate ?? null, codec ?? null, id]
+  );
+  return res.rows[0] || null;
+}
+
+export async function updateAudioHash(id, audioHash) {
+  const res = await db.query(
+    `
+    UPDATE songs
+    SET audio_hash = $1, updated_at = CURRENT_TIMESTAMP
+    WHERE id = $2
+    RETURNING id;
+    `,
+    [audioHash, id]
+  );
+  return res.rows[0] || null;
+}
+

@@ -160,8 +160,9 @@ function UploadSongMoreMenu({ song, onPlay, onCopy, onDelete }) {
 }
 
 export default function UploadsSongsList({
+  user, // prop truyền từ ngoài vào
   accessToken,
-  pageSize = 20,
+  pageSize = 100, // ✅ Tăng lên 100 để hiển thị đủ 40+ bài hát ngay lập tức
   className,
   selectedSongId,
   onSelectSong,
@@ -196,10 +197,20 @@ export default function UploadsSongsList({
 
   const hasLogin = !!token;
 
+  const targetUserId = user?.id || me?.id;
+
   const mySongs = useMemo(() => {
-    if (!me) return [];
-    return songs.filter((s) => Number(s.user_id) === Number(me.id));
-  }, [songs, me]);
+    if (!Array.isArray(songs)) return [];
+    
+    // Nếu server đã lọc theo userId rồi thì ta không nhất thiết phải lọc lại ở client.
+    // Tuy nhiên để an toàn, nếu có targetUserId thì ta vẫn lọc, nhưng dùng so sánh lỏng lẻo hơn.
+    if (!targetUserId) return songs; 
+
+    return songs.filter(
+      (s) => String(s.user_id || "") === String(targetUserId)
+    );
+  }, [songs, targetUserId]);
+
 
   function formatDuration(seconds) {
     const s = Number(seconds || 0);
@@ -233,7 +244,7 @@ export default function UploadsSongsList({
     }
   }
 
-  async function fetchSongs({ pageToLoad = 1, append = false } = {}) {
+  async function fetchSongs({ pageToLoad = 1, append = false, userId } = {}) {
     setLoadingSongs(true);
     try {
       const res = await http.get("/songs", {
@@ -241,9 +252,11 @@ export default function UploadsSongsList({
           page: pageToLoad,
           limit: pageSize,
           q: q?.trim() || undefined,
+          userId: userId || me?.id || undefined, // ✅ Lọc tại server
           sort,
         },
       });
+
 
       // Doc: { success: true, data: [...], meta: {...} }
       const data = Array.isArray(res?.data?.data) ? res.data.data : [];
@@ -273,15 +286,17 @@ export default function UploadsSongsList({
   useEffect(() => {
     // Load lần đầu
     (async () => {
-      // Không bắt buộc login để gọi /songs, nhưng muốn lọc "uploads của tôi" thì phải có /auth/me
+      let currentMe = null;
       if (hasLogin) {
-        await fetchMe();
+        currentMe = await fetchMe();
       } else {
         setMe(null);
       }
-      await fetchSongs({ pageToLoad: 1, append: false });
+      // Pass userId explicitly to avoid race condition with state update
+      await fetchSongs({ pageToLoad: 1, append: false, userId: currentMe?.id });
       setPage(1);
     })();
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasLogin]);
 
@@ -487,7 +502,8 @@ export default function UploadsSongsList({
                 </div>
               ) : (
                 showList.map((song) => {
-                  const active = Number(selectedSongId) === Number(song.id);
+                  // ✅ Fix: UUID comparison should use String()
+                  const active = String(selectedSongId || "") === String(song.id || "");
 
                   const albumTitle =
                     song?.album?.title ||

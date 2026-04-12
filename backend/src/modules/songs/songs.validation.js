@@ -28,6 +28,7 @@ const positiveIntNullableFromAny = z.preprocess((v) => {
   return Number.isFinite(n) ? n : v;
 }, z.number().int().positive().nullable());
 
+// Standard UUID validation
 const id = z.preprocess((v) => Number(v), z.number().int().positive());
 
 export const songIdParamSchema = z.object({
@@ -47,12 +48,14 @@ export const songGenreParamSchema = z.object({
 export const listSongsQuerySchema = z.object({
   page: z.string().optional(),
   limit: z.string().optional(),
-  q: z.string().trim().min(1).optional(),
+  q: z.string().trim().optional(),
   genreId: z.string().optional(),
   artistId: z.string().optional(),
   albumId: z.string().optional(),
+  userId: z.string().optional(),
   sort: z.enum(["newest", "oldest", "title_asc", "title_desc"]).optional(),
 });
+
 
 export const createSongSchema = z.object({
   title: z.string().min(1, "title không được để trống").max(150),

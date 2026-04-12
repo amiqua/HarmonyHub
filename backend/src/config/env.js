@@ -23,6 +23,8 @@ const envSchema = z.object({
   // JWT (tuỳ bạn dùng)
   JWT_ACCESS_SECRET: z.string().optional(),
   JWT_REFRESH_SECRET: z.string().optional(),
+  JWT_ACCESS_EXPIRES_IN: z.string().default("1d"),
+  JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
 });
 
 const parsed = envSchema.safeParse(process.env);

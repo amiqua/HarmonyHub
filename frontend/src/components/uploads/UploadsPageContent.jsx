@@ -19,7 +19,7 @@ import UploadsSongsList from "@/components/uploads/UploadsSongsList";
  * Props (optional):
  * - onRequireLogin?: () => void  // nếu bạn muốn mở LoginDialog khi cần
  */
-export default function UploadsPageContent({ onRequireLogin }) {
+export default function UploadsPageContent({ user, onRequireLogin, onPlaySong }) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedSongId, setSelectedSongId] = useState(null);
 
@@ -42,14 +42,14 @@ export default function UploadsPageContent({ onRequireLogin }) {
 
       <UploadsSongsList
         key={refreshKey}
+        user={user}
         selectedSongId={selectedSongId}
+
         onSelectSong={(song) => {
           console.log("[UploadsPageContent] Select song:", song);
           setSelectedSongId(song?.id ?? null);
         }}
-        onPlaySong={(song) =>
-          console.log("[UploadsPageContent] Play song:", song)
-        }
+        onPlaySong={onPlaySong}
         onDeleted={(song) => {
           console.log("[UploadsPageContent] Deleted song:", song);
           toast.success("Đã xoá và cập nhật danh sách.");
@@ -62,3 +62,4 @@ export default function UploadsPageContent({ onRequireLogin }) {
     </div>
   );
 }
+
