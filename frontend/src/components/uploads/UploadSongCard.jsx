@@ -86,12 +86,25 @@ export default function UploadSongCard({ onUploaded, onRequireLogin }) {
   const validateAndSetFile = async (picked) => {
     if (!picked) return;
 
-    // Validate type (basic)
-    if (!picked.type?.startsWith("audio/")) {
+    const audioExt = /\.(mp3|wav|flac|ogg|aac|m4a|mp4|webm|opus)$/i;
+    const mimeOk =
+      picked.type?.startsWith("audio/") ||
+      // m4a/mp4 audio đôi khi browser trả "video/mp4" hoặc rỗng
+      picked.type === "video/mp4" ||
+      !picked.type;
+    const extOk = audioExt.test(picked.name || "");
+
+    if (!mimeOk && !extOk) {
       toast.error(
-        "File không phải định dạng audio. Vui lòng chọn mp3/wav/ogg..."
+        "File không phải định dạng audio. Vui lòng chọn mp3/wav/ogg/m4a/flac..."
       );
       console.error("[UploadSongCard] Invalid file type:", picked.type, picked);
+      return;
+    }
+
+    // Cảnh báo dung lượng (backend giới hạn 25MB)
+    if (picked.size > 25 * 1024 * 1024) {
+      toast.error("File quá lớn (tối đa 25MB).");
       return;
     }
 
@@ -101,6 +114,8 @@ export default function UploadSongCard({ onUploaded, onRequireLogin }) {
       const nameNoExt = picked.name.replace(/\.[^/.]+$/, "");
       setTitle(nameNoExt);
     }
+
+    toast.success(`Đã chọn: ${picked.name}`);
   };
 
   const validateAndSetImage = async (picked) => {
@@ -258,7 +273,10 @@ export default function UploadSongCard({ onUploaded, onRequireLogin }) {
           <div className="mt-4">
             <Button
               type="button"
-              onClick={pickFile}
+              onClick={(e) => {
+                e.stopPropagation();
+                pickFile();
+              }}
               disabled={mutation.isPending}
             >
               Chọn tệp
@@ -270,7 +288,9 @@ export default function UploadSongCard({ onUploaded, onRequireLogin }) {
             type="file"
             accept="audio/*"
             className="hidden"
+            onClick={(e) => e.stopPropagation()}
             onChange={async (e) => {
+              e.stopPropagation();
               const picked = e.target.files?.[0];
               await validateAndSetFile(picked);
               e.target.value = "";
@@ -280,7 +300,10 @@ export default function UploadSongCard({ onUploaded, onRequireLogin }) {
 
           {/* Selected file */}
           {fileMeta && (
-            <div className="mt-6 w-full max-w-2xl rounded-xl border border-border/60 bg-background/30 p-4 text-left">
+            <div
+              className="mt-6 w-full max-w-2xl rounded-xl border border-border/60 bg-background/30 p-4 text-left"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <FileAudio className="mt-0.5 h-5 w-5 opacity-80" />
