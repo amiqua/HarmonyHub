@@ -28,22 +28,19 @@ Cài dependencies:
 
 npm install
 
-Tạo file .env trong thư mục backend:
+Tạo file .env
 
-touch .env
 
-Mở file .env và thêm:
-
+DATABASE_URL=postgresql://neondb_owner:npg_7yiR9BFEhjHb@ep-long-meadow-a19fkoar-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+CLOUDINARY_CLOUD_NAME=dhroj62fa
+CLOUDINARY_API_KEY=547872612298595
+CLOUDINARY_API_SECRET=LdXpcbUVtm0znGPjPL0OvTmWUOM
 PORT=3000
-
-DATABASE_URL=postgresql://username:password@localhost:5432/dbname
-
-JWT_ACCESS_SECRET=your_secret
-JWT_REFRESH_SECRET=your_refresh_secret
-
-CLOUDINARY_CLOUD_NAME=xxx
-CLOUDINARY_API_KEY=xxx
-CLOUDINARY_API_SECRET=xxx
+JWT_ACCESS_SECRET=UNPZXfmorv_zO1bcesRWWMLdU_-OjJDT49DvlrVq8IUWiAhlTXgQGsVFnucBsHVL
+JWT_REFRESH_SECRET=am4HSlNC9I1Wddt_peZ5XpSw8YumIEnduNncs-DoFQgPrEeCkXQgr5Zim4RzZzhU
+CORS_ORIGIN=http://localhost:5173
+LOG_LEVEL=info
+NODE_ENV=production
 
 👉 Lưu file lại
 
@@ -54,19 +51,6 @@ npm run dev
 👉 Nếu thành công:
 Server chạy tại: http://localhost:3000
 
--------------------------------
-3. Setup DATABASE
--------------------------------
-
-Đảm bảo bạn đã cài PostgreSQL.
-
-Tạo database:
-
-CREATE DATABASE your_db_name;
-
-Import schema:
-
-psql -U postgres -d your_db_name -f schema.sql
 
 -------------------------------
 4. Chạy FRONTEND
@@ -87,8 +71,8 @@ Tạo file .env:
 touch .env
 
 Thêm:
-
-VITE_API_BASE_URL=http://localhost:3000
+VITE_API_TIMEOUT=15000
+VITE_API_BASE_URL=/api/v1
 
 Chạy frontend:
 
