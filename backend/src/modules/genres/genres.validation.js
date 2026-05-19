@@ -1,9 +1,5 @@
 /**
- * Công dụng: Validate dữ liệu đầu vào cho module Genres.
- * - listGenresQuerySchema: (hiện đơn giản, có thể mở rộng q= tìm theo tên)
- * - genreIdParamSchema: validate :id
- * - create/update genre
- * - listSongsByGenreQuerySchema: phân trang + sort
+ * Validate dữ liệu đầu vào cho Genres.
  */
 
 import { z } from "zod";
@@ -18,11 +14,17 @@ export const listGenresQuerySchema = z.object({
 
 export const createGenreSchema = z.object({
   name: z.string().min(1, "name không được để trống").max(50),
+  description: z.string().max(500).optional(),
 });
 
-export const updateGenreSchema = z.object({
-  name: z.string().min(1).max(50),
-});
+export const updateGenreSchema = z
+  .object({
+    name: z.string().min(1).max(50).optional(),
+    description: z.string().max(500).optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0 || true, {
+    message: "Cần ít nhất một trường để cập nhật",
+  });
 
 export const listSongsByGenreQuerySchema = z.object({
   page: z.string().optional(),

@@ -2,6 +2,9 @@
  * Công dụng: Tầng thao tác database cho Genres (viết SQL).
  * - list/getById/create/update/remove: CRUD genres
  * - getSongs: lấy danh sách bài hát theo thể loại (join song_genres)
+ *
+ * Cột:
+ * - id, name, image_url, image_public_id, description
  */
 
 import { db } from "../../config/db.js";
@@ -20,6 +23,8 @@ function buildSort(sort) {
   }
 }
 
+const GENRE_COLUMNS = "id, name, image_url, image_public_id, description";
+
 export async function list({ q }) {
   const params = [];
   let whereSql = "";
@@ -31,7 +36,7 @@ export async function list({ q }) {
 
   const res = await db.query(
     `
-    SELECT id, name
+    SELECT ${GENRE_COLUMNS}
     FROM genres
     ${whereSql}
     ORDER BY name ASC;
@@ -43,31 +48,50 @@ export async function list({ q }) {
 }
 
 export async function getById(id) {
-  const res = await db.query(`SELECT id, name FROM genres WHERE id = $1 LIMIT 1;`, [id]);
+  const res = await db.query(
+    `SELECT ${GENRE_COLUMNS} FROM genres WHERE id = $1 LIMIT 1;`,
+    [id]
+  );
   return res.rows[0] || null;
 }
 
-export async function create({ name }) {
+export async function create({ name, description, image_url, image_public_id }) {
   const res = await db.query(
     `
-    INSERT INTO genres (name)
-    VALUES ($1)
-    RETURNING id, name;
+    INSERT INTO genres (name, description, image_url, image_public_id)
+    VALUES ($1, $2, $3, $4)
+    RETURNING ${GENRE_COLUMNS};
     `,
-    [name]
+    [name, description ?? null, image_url ?? null, image_public_id ?? null]
   );
   return res.rows[0];
 }
 
-export async function update(id, { name }) {
+export async function update(id, patch) {
+  const fields = [];
+  const params = [];
+  let idx = 1;
+
+  for (const col of ["name", "description", "image_url", "image_public_id"]) {
+    if (patch[col] !== undefined) {
+      fields.push(`${col} = $${idx++}`);
+      params.push(patch[col]);
+    }
+  }
+
+  if (fields.length === 0) {
+    return await getById(id);
+  }
+
+  params.push(id);
   const res = await db.query(
     `
     UPDATE genres
-    SET name = $1
-    WHERE id = $2
-    RETURNING id, name;
+    SET ${fields.join(", ")}
+    WHERE id = $${idx}
+    RETURNING ${GENRE_COLUMNS};
     `,
-    [name, id]
+    params
   );
   return res.rows[0] || null;
 }

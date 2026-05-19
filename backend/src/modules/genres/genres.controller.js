@@ -1,6 +1,5 @@
 /**
  * Công dụng: Controller cho module Genres.
- * - Nhận request, gọi genres.service xử lý, trả response.
  */
 
 import { created, ok } from "../../utils/response.js";
@@ -11,6 +10,12 @@ export async function list(req, res) {
   return ok(res, result);
 }
 
+export async function getById(req, res) {
+  const genreId = Number(req.params.id);
+  const result = await genresService.getById(genreId);
+  return ok(res, result);
+}
+
 export async function getSongs(req, res) {
   const genreId = Number(req.params.id);
   const result = await genresService.getSongs(genreId, req.query);
@@ -18,13 +23,13 @@ export async function getSongs(req, res) {
 }
 
 export async function create(req, res) {
-  const result = await genresService.create(req.body);
+  const result = await genresService.create(req.body, req.file);
   return created(res, result);
 }
 
 export async function update(req, res) {
   const genreId = Number(req.params.id);
-  const result = await genresService.update(genreId, req.body);
+  const result = await genresService.update(genreId, req.body, req.file);
   return ok(res, result);
 }
 

@@ -17,8 +17,10 @@ export default function GenresHero({
   title = "Cà phê",
   subtitle,
   backgroundUrl,
+  imageUrl,
   className,
 }) {
+  const bg = backgroundUrl || imageUrl;
   return (
     <section
       className={cn(
@@ -28,9 +30,9 @@ export default function GenresHero({
     >
       {/* Background image */}
       <div className="absolute inset-0">
-        {backgroundUrl ? (
+        {bg ? (
           <img
-            src={backgroundUrl}
+            src={bg}
             alt="genre-hero"
             className="h-full w-full object-cover opacity-60"
           />
