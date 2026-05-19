@@ -35,18 +35,34 @@ import {
  * - open: boolean
  * - onOpenChange: (open:boolean) => void
  * - onSuccess?: ({ user, tokens, raw }) => void
+ * - onSwitchLogin?: () => void
  */
-export default function RegisterDialog({ open, onOpenChange, onSuccess }) {
+export default function RegisterDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+  onSwitchLogin,
+}) {
   const qc = useQueryClient();
 
   const schema = useMemo(
     () =>
       z
         .object({
-          username: z.string().min(2, "Tên hiển thị tối thiểu 2 ký tự"),
-          email: z.string().email("Email không hợp lệ"),
-          password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự"),
-          confirmPassword: z.string().min(6, "Vui lòng nhập lại mật khẩu"),
+          username: z
+            .string()
+            .min(3, "Tên đăng nhập tối thiểu 3 ký tự")
+            .max(50, "Tên đăng nhập tối đa 50 ký tự"),
+          email: z.string().email("Email không hợp lệ").max(100),
+          password: z
+            .string()
+            .min(8, "Mật khẩu tối thiểu 8 ký tự")
+            .max(100, "Mật khẩu tối đa 100 ký tự")
+            .regex(/[A-Z]/, "Phải có ít nhất 1 chữ HOA")
+            .regex(/[a-z]/, "Phải có ít nhất 1 chữ thường")
+            .regex(/[0-9]/, "Phải có ít nhất 1 chữ số")
+            .regex(/[^A-Za-z0-9]/, "Phải có ít nhất 1 ký tự đặc biệt"),
+          confirmPassword: z.string().min(1, "Vui lòng nhập lại mật khẩu"),
         })
         .refine((v) => v.password === v.confirmPassword, {
           message: "Mật khẩu nhập lại không khớp",
@@ -112,7 +128,11 @@ export default function RegisterDialog({ open, onOpenChange, onSuccess }) {
         status: err?.response?.status,
         data: err?.response?.data,
       });
-      toast.error(err?.response?.data?.message ?? "Đăng ký thất bại.");
+      const data = err?.response?.data;
+      const detailMsg = Array.isArray(data?.payload?.details)
+        ? data.payload.details.map((d) => `${d.field}: ${d.message}`).join("\n")
+        : null;
+      toast.error(detailMsg || data?.message || "Đăng ký thất bại.");
     },
   });
 
@@ -183,12 +203,16 @@ export default function RegisterDialog({ open, onOpenChange, onSuccess }) {
                   <FormControl>
                     <Input
                       type="password"
-                      placeholder="••••••"
+                      placeholder="••••••••"
                       autoComplete="new-password"
                       {...field}
                       disabled={mRegister.isPending}
                     />
                   </FormControl>
+                  <p className="text-xs text-muted-foreground">
+                    Tối thiểu 8 ký tự, có chữ HOA, chữ thường, số và ký tự
+                    đặc biệt (vd: <code>Pass1234!</code>).
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
@@ -221,6 +245,19 @@ export default function RegisterDialog({ open, onOpenChange, onSuccess }) {
             >
               {mRegister.isPending ? "Đang đăng ký..." : "Đăng ký"}
             </Button>
+
+            {onSwitchLogin && (
+              <p className="text-center text-sm text-muted-foreground">
+                Đã có tài khoản?{" "}
+                <button
+                  type="button"
+                  onClick={onSwitchLogin}
+                  className="font-medium text-emerald-500 hover:underline"
+                >
+                  Đăng nhập
+                </button>
+              </p>
+            )}
           </form>
         </Form>
       </DialogContent>

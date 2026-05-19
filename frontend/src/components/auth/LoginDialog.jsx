@@ -35,15 +35,21 @@ import {
  * - open: boolean
  * - onOpenChange: (open:boolean) => void
  * - onSuccess?: ({ user, tokens, raw }) => void
+ * - onSwitchRegister?: () => void
  */
-export default function LoginDialog({ open, onOpenChange, onSuccess }) {
+export default function LoginDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+  onSwitchRegister,
+}) {
   const qc = useQueryClient();
 
   const schema = useMemo(
     () =>
       z.object({
         email: z.string().email("Email không hợp lệ"),
-        password: z.string().min(6, "Mật khẩu tối thiểu 6 ký tự"),
+        password: z.string().min(1, "Vui lòng nhập mật khẩu"),
       }),
     []
   );
@@ -175,6 +181,19 @@ export default function LoginDialog({ open, onOpenChange, onSuccess }) {
             >
               {mLogin.isPending ? "Đang đăng nhập..." : "Đăng nhập"}
             </Button>
+
+            {onSwitchRegister && (
+              <p className="text-center text-sm text-muted-foreground">
+                Chưa có tài khoản?{" "}
+                <button
+                  type="button"
+                  onClick={onSwitchRegister}
+                  className="font-medium text-emerald-500 hover:underline"
+                >
+                  Đăng ký
+                </button>
+              </p>
+            )}
           </form>
         </Form>
       </DialogContent>

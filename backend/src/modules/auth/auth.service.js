@@ -23,7 +23,7 @@ import {
 } from "../../utils/jwt.js";
 
 function safeUser(userRow) {
-  return pick(userRow, ["id", "username", "email", "created_at"]);
+  return pick(userRow, ["id", "username", "email", "role", "created_at"]);
 }
 
 function ensureJwtAccessConfigured() {
@@ -75,7 +75,7 @@ export async function register({ username, email, password }) {
       `
       INSERT INTO users (username, email, password_hash)
       VALUES ($1, $2, $3)
-      RETURNING id, username, email, created_at;
+      RETURNING id, username, email, role, created_at;
       `,
       [username, email, password_hash]
     );
@@ -92,12 +92,12 @@ export async function register({ username, email, password }) {
       [user.id]
     );
 
-    // Token payload (tạm thời role luôn USER)
+    // Token payload — role từ DB (fallback USER)
     const payload = {
       userId: user.id,
       email: user.email,
       username: user.username,
-      role: ROLES.USER,
+      role: user.role || ROLES.USER,
     };
 
   const accessToken = signAccessToken(payload);
@@ -136,7 +136,7 @@ export async function login({ email, password }) {
 
   const result = await db.query(
     `
-    SELECT id, username, email, password_hash, created_at
+    SELECT id, username, email, password_hash, role, created_at
     FROM users
     WHERE email = $1
     LIMIT 1;
@@ -158,7 +158,7 @@ export async function login({ email, password }) {
     userId: user.id,
     email: user.email,
     username: user.username,
-    role: ROLES.USER,
+    role: user.role || ROLES.USER,
   };
 
   const accessToken = signAccessToken(payload);
@@ -206,7 +206,7 @@ export async function refresh({ refreshToken }) {
   }
 
   const userRes = await db.query(
-    `SELECT id, username, email, created_at FROM users WHERE id = $1 LIMIT 1;`,
+    `SELECT id, username, email, role, created_at FROM users WHERE id = $1 LIMIT 1;`,
     [userId]
   );
 
@@ -220,7 +220,7 @@ export async function refresh({ refreshToken }) {
     userId: user.id,
     email: user.email,
     username: user.username,
-    role: ROLES.USER,
+    role: user.role || ROLES.USER,
   });
 
   return { accessToken: newAccessToken };
@@ -236,7 +236,7 @@ export async function getMe(userPayload) {
   if (!userId) throw new ApiError(401, "Token không hợp lệ.");
 
   const result = await db.query(
-    `SELECT id, username, email, created_at FROM users WHERE id = $1 LIMIT 1;`,
+    `SELECT id, username, email, role, created_at FROM users WHERE id = $1 LIMIT 1;`,
     [userId]
   );
 
