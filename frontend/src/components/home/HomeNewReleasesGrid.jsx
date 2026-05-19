@@ -52,7 +52,7 @@ export default function HomeNewReleasesGrid({
         if (sort) params.sort = sort;
 
         // Backend: GET /api/v1/albums
-        const res = await http.get("/api/v1/albums", { params });
+        const res = await http.get("/albums", { params });
         const payload = res?.data;
 
         const data = Array.isArray(payload?.data) ? payload.data : [];

@@ -1,152 +1,148 @@
 // FILE: src/components/newreleases/NewReleasesPageContent.jsx
-// CHÚ THÍCH:
-// - Page content cho trang "BXH Nhạc Mới" (New Releases Chart).
-// - Dùng NewReleasesHeader + NewReleasesList.
-// - Hiện dùng DATA MẪU để đảm bảo render chạy ngay, hạn chế phát sinh vấn đề.
-// - Mọi action có toast + console rõ ràng (play/like/more...).
-// - KHÔNG fetch API. Khi có API thật, thay phần seedItems bằng react-query + apiClient.
+// Page content cho trang "BXH Nhạc Mới" (New Releases Chart).
+// Fetch GET /api/v1/songs với sort=newest, sau đó render header + list.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+
+import { http } from "@/lib/http";
+import { usePlayer } from "@/hooks/usePlayer";
+import { addFavoriteSong, removeFavoriteSong } from "@/services/favorites.api";
 
 import NewReleasesHeader from "@/components/newreleases/NewReleasesHeader";
 import NewReleasesList from "@/components/newreleases/NewReleasesList";
 
-/**
- * Props:
- * - onRequireLogin?: () => void
- */
+function normalizeSong(s, idx) {
+  const id = s?.id ?? s?.song_id ?? `nr-${idx}`;
+  const title = s?.title ?? s?.name ?? "Untitled";
+  const artistsList = Array.isArray(s?.artists)
+    ? s.artists.map((a) => a?.name ?? a).filter(Boolean).join(", ")
+    : "";
+  const artist = s?.artist || artistsList || "Unknown Artist";
+  const album = s?.album_title ?? s?.album?.title ?? s?.album ?? "";
+  const coverUrl =
+    s?.cover_url ?? s?.image_url ?? s?.thumbnail ?? s?.thumbnail_url ?? "";
+  const audio_url = s?.audio_url ?? s?.file_url ?? s?.url ?? "";
+  const duration = s?.duration ?? null;
+
+  return {
+    ...s,
+    id,
+    title,
+    artist,
+    album,
+    coverUrl,
+    cover_url: coverUrl,
+    audio_url,
+    duration,
+    liked: Boolean(s?.liked),
+  };
+}
+
 export default function NewReleasesPageContent({ onRequireLogin }) {
-  const seedItems = useMemo(
-    () => [
-      {
-        id: "nr-1",
-        rank: 1,
-        delta: +1,
-        title: "Golden Hour",
-        artist: "Luna Wave",
-        album: "Neon Skies",
-        duration: 214,
-        thumbnail: "",
-        liked: false,
-      },
-      {
-        id: "nr-2",
-        rank: 2,
+  const [rawItems, setRawItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeSongId, setActiveSongId] = useState(null);
+  const { handlePlaySong: playSongGlobal } = usePlayer();
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      setIsLoading(true);
+      try {
+        const res = await http.get("/songs", {
+          params: { page: 1, limit: 50, sort: "newest" },
+        });
+        const list = Array.isArray(res?.data?.data) ? res.data.data : [];
+        if (!alive) return;
+        setRawItems(list);
+      } catch (err) {
+        console.error("[NewReleasesPageContent] Fetch failed:", err);
+        if (alive) setRawItems([]);
+      } finally {
+        if (alive) setIsLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const items = useMemo(
+    () =>
+      rawItems.map((s, idx) => ({
+        ...normalizeSong(s, idx),
+        rank: idx + 1,
         delta: 0,
-        title: "Midnight Drive",
-        artist: "The Midnight Bloom",
-        album: "Late Night Drives",
-        duration: 198,
-        thumbnail: "",
-        liked: true,
-      },
-      {
-        id: "nr-3",
-        rank: 3,
-        delta: -2,
-        title: "Afterglow",
-        artist: "Orion's Belt",
-        album: "Starlight Sessions",
-        duration: 231,
-        thumbnail: "",
-        liked: false,
-      },
-    ],
-    []
+      })),
+    [rawItems]
   );
 
-  const [items, setItems] = useState(seedItems);
-  const [activeSongId, setActiveSongId] = useState(null);
-
   const handlePlaySong = (song) => {
-    try {
-      setActiveSongId(song?.id ?? null);
-      toast.success(`Phát: ${song?.title ?? "Bài hát"}`);
-      console.log("[NewReleasesPageContent] Play song:", song);
-    } catch (err) {
-      console.error("[NewReleasesPageContent] handlePlaySong failed:", err);
-      toast.error("Không thể phát bài hát.");
+    setActiveSongId(song?.id ?? null);
+    if (typeof playSongGlobal === "function") {
+      playSongGlobal(song);
     }
   };
 
   const handlePlayAll = () => {
-    try {
-      if (!items.length) {
-        toast.error("Chưa có bài hát để phát.");
-        return;
-      }
-      const first = items[0];
-      setActiveSongId(first?.id ?? null);
-      toast.success("Phát tất cả (mock).");
-      console.log("[NewReleasesPageContent] Play all:", items);
-    } catch (err) {
-      console.error("[NewReleasesPageContent] handlePlayAll failed:", err);
-      toast.error("Không thể phát tất cả.");
+    if (!items.length) {
+      toast.error("Chưa có bài hát để phát.");
+      return;
     }
+    handlePlaySong(items[0]);
   };
 
-  const handleToggleLike = (song) => {
-    const accessToken = localStorage.getItem("accessToken");
-    if (!accessToken) {
+  const handleToggleLike = async (song) => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
       toast.error("Bạn cần đăng nhập để dùng yêu thích.");
-      console.warn("[NewReleasesPageContent] Missing accessToken.");
       onRequireLogin?.();
       return;
     }
-
     try {
-      setItems((prev) =>
-        (Array.isArray(prev) ? prev : []).map((it) =>
-          it?.id === song?.id ? { ...it, liked: !it?.liked } : it
+      if (song?.liked) {
+        await removeFavoriteSong(song.id);
+        toast.success("Đã bỏ yêu thích.");
+      } else {
+        await addFavoriteSong(song.id);
+        toast.success("Đã thêm yêu thích.");
+      }
+      setRawItems((prev) =>
+        prev.map((it) =>
+          (it?.id ?? it?.song_id) === song?.id
+            ? { ...it, liked: !song.liked }
+            : it
         )
       );
-      toast.success(song?.liked ? "Đã bỏ yêu thích." : "Đã thêm yêu thích.");
-      console.log("[NewReleasesPageContent] Toggle like:", song);
     } catch (err) {
-      console.error("[NewReleasesPageContent] handleToggleLike failed:", err);
-      toast.error("Không thể cập nhật yêu thích.");
+      console.error("[NewReleasesPageContent] toggleLike failed:", err);
     }
   };
 
   const handleOpenLyrics = (song) => {
-    try {
-      toast.success("Mở lời bài hát (mock).");
-      console.log("[NewReleasesPageContent] Open lyrics:", song);
-    } catch (err) {
-      console.error("[NewReleasesPageContent] handleOpenLyrics failed:", err);
-      toast.error("Không thể mở lời bài hát.");
-    }
+    toast.message(`Lời bài hát "${song?.title ?? ""}" (đang phát triển).`);
   };
 
   const handleAddToPlaylist = (song) => {
-    const accessToken = localStorage.getItem("accessToken");
-    if (!accessToken) {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
       toast.error("Bạn cần đăng nhập để thêm vào playlist.");
-      console.warn("[NewReleasesPageContent] Missing accessToken.");
       onRequireLogin?.();
       return;
     }
-
-    try {
-      toast.success("Đã chọn thêm vào danh sách phát (mock).");
-      console.log("[NewReleasesPageContent] Add to playlist:", song);
-    } catch (err) {
-      console.error(
-        "[NewReleasesPageContent] handleAddToPlaylist failed:",
-        err
-      );
-      toast.error("Không thể thêm vào playlist.");
-    }
+    window.dispatchEvent(
+      new CustomEvent("playlist:add", { detail: { song } })
+    );
   };
 
   const handleShare = (song) => {
-    try {
-      toast.success("Mở chia sẻ (mock).");
-      console.log("[NewReleasesPageContent] Share:", song);
-    } catch (err) {
-      console.error("[NewReleasesPageContent] handleShare failed:", err);
-      toast.error("Không thể chia sẻ.");
+    const url = song?.audio_url || window.location.href;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(
+        () => toast.success("Đã copy link bài hát."),
+        () => toast.error("Không thể copy link.")
+      );
     }
   };
 
@@ -154,8 +150,14 @@ export default function NewReleasesPageContent({ onRequireLogin }) {
     <div className="space-y-6">
       <NewReleasesHeader
         title="BXH Nhạc Mới"
-        subtitle="Cập nhật theo thời gian thực (UI demo)"
+        subtitle={
+          isLoading
+            ? "Đang tải dữ liệu..."
+            : `${items.length} bài hát mới nhất`
+        }
+        items={items}
         onPlayAll={handlePlayAll}
+        onPlaySong={handlePlaySong}
       />
 
       <NewReleasesList

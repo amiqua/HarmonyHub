@@ -48,8 +48,7 @@ export async function listMine(userPayload, query = {}) {
   const { page, limit, offset } = parsePagination(query);
   const q = typeof query.q === "string" ? query.q.trim() : undefined;
 
-  const { rows, total } = await playlistsRepo.listMine({
-    userId,
+  const { rows, total } = await playlistsRepo.listMine(userId, {
     q,
     limit,
     offset,
