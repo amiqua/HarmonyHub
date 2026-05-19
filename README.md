@@ -81,6 +81,7 @@ touch .env
 
 Thêm:
 VITE_API_TIMEOUT=15000
+
 VITE_API_BASE_URL=/api/v1
 
 Chạy frontend:
