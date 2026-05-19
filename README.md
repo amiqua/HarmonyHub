@@ -1,33 +1,4 @@
-===============================
 
-HARMONY HUB - MUSIC FULLSTACK PROJECT
-
-===============================
-
-Node.js | Express | PostgreSQL | React | Vite | Tailwind | JWT | Cloudinary
-
-===============================
-
-GIỚI THIỆU
-
-Đây là project fullstack xây dựng một hệ thống nghe nhạc (Music Platform).
-
-Bao gồm:
-
-- Backend API (Node.js + Express)
-- Frontend (React + Vite + TailwindCSS)
-
-Chức năng chính:
-
-- Authentication (JWT)
-- Quản lý bài hát
-- Album, Artist
-- Playlist (system + user)
-- Favorite songs
-- History nghe nhạc
-- Upload audio (Cloudinary)
-
-===============================
 
 CÁCH CHẠY PROJECT (QUAN TRỌNG)
 
@@ -184,3 +155,34 @@ NOTES
 - Nhớ chạy backend trước frontend
 - Dùng Cloudinary để upload audio
 - Chuẩn RESTful API
+===============================
+===============================
+
+HARMONY HUB - MUSIC FULLSTACK PROJECT
+
+===============================
+
+Node.js | Express | PostgreSQL | React | Vite | Tailwind | JWT | Cloudinary
+
+===============================
+
+GIỚI THIỆU
+
+Đây là project fullstack xây dựng một hệ thống nghe nhạc (Music Platform).
+
+Bao gồm:
+
+- Backend API (Node.js + Express)
+- Frontend (React + Vite + TailwindCSS)
+
+Chức năng chính:
+
+- Authentication (JWT)
+- Quản lý bài hát
+- Album, Artist
+- Playlist (system + user)
+- Favorite songs
+- History nghe nhạc
+- Upload audio (Cloudinary)
+
+===============================
