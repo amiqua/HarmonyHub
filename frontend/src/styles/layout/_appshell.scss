@@ -62,6 +62,7 @@
   background: $color-bg-elevated;
   border-right: 1px solid $color-border;
   z-index: $z-sidebar;
+  padding-bottom: 88px; // reserve space for fixed audio player
 
   @media (max-width: calc(#{$bp-md} - 1px)) {
     display: none;
@@ -100,6 +101,7 @@
   flex: 1;
   min-height: 0;
   padding: $s-6 $s-5;
+  padding-bottom: calc(#{$s-6} + 88px); // reserve space for fixed audio player
   overflow-y: auto;
   @include custom-scrollbar;
 
